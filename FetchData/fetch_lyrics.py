@@ -417,7 +417,8 @@ if __name__ == '__main__':
         search_for_songs(songs_file_path, links_file_path, 0)
     # 这个函数自动搜索所有存着的url，但是可能里面的lyrics不让用
     output_dir_path = 'lyrics'
-    get_lyrics(links_file_path, output_dir_path, 788)
+    if not os.path.exists(output_dir_path):
+        get_lyrics(links_file_path, output_dir_path, 0)
     #final_dir_path = 'moods_lyrics'
     #if not os.path.exists(final_dir_path):
     #    songs_dict = get_songs_dict(lyrics_file_path, songs_file_path)

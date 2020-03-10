@@ -65,6 +65,8 @@ StyleCopReport.xml
 *_h.h
 *.ilk
 *.meta
+*.sln
+*.pyproj
 *.obj
 *.iobj
 *.pch

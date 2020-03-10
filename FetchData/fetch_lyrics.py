@@ -135,10 +135,13 @@ def search_for_songs(songs_file_path, output_file_path, debug_mode = 0):
                         html_content = None
                         for option in options:
                             url = get_url_by_option(option, title, artist)
-                            html_content = fetch_html(url)
-                            if html_content is not None:
-                                spamwriter.writerow(record + [url])
-                                break
+                            if url is not None:
+                                html_content = fetch_html(url)
+                                if html_content is not None:
+                                    if url.find('https://genius.com/') == -1:
+                                        print(cnt, artist, ',', title)
+                                    spamwriter.writerow(record + [url])
+                                    break
                         if html_content is None:
                             spamwriter.writerow(record)
                             print(cnt, artist, ',', title, end='\r')
@@ -205,20 +208,18 @@ def get_lyrics_without_encoding(output_file, link, html_content):
     elif link.find('https://www.lyrics.com/') != -1:
         lines = html_content.decode('utf-8').split('\n')
         begin = False
-        output_file_path = output_dir_path + file_name + '.txt'
-        with open(output_file_path, 'w', encoding='utf-8') as output_file:
-            for line in lines:
-                if not begin:
-                    result = re.search(r'<pre id=\"lyric-body-text\"', line)
-                    if result:
-                        begin = True
-                else:
-                    result = re.search(r'</pre>', line)
-                    if result:
-                        break
-                    lyrics = re.sub(r'<[^>]+>', '', line)
-                    output_file.write(lyrics)
-                    line_cnt += 1
+        for line in lines:
+            if not begin:
+                result = re.search(r'<pre id=\"lyric-body-text\"', line)
+                if result:
+                    begin = True
+            else:
+                result = re.search(r'</pre>', line)
+                if result:
+                    break
+                lyrics = re.sub(r'<[^>]+>', '', line)
+                output_file.write(lyrics)
+                line_cnt += 1
     elif link.find('https://www.karaoke-lyrics.net/') != -1:
         lines = html_content.decode('utf-8').split('\n')
         for line in lines:
@@ -271,25 +272,27 @@ def test_extra_link(output_file_path, title, artist):
     line_cnt = 0
     for option in options:
         link = get_url_by_option(option, title, artist)
-        html_content = fetch_html(link)
-        if not os.path.exists(output_file_path):
-            try:
-                with open(output_file_path, 'w', encoding='latin-1') as output_file:
-                    line_cnt = get_lyrics_without_encoding(output_file, link, html_content)
-            finally:
+        if link is not None:
+            html_content = fetch_html(link)
+            if html_content is not None:
                 if line_cnt == 0:
-                    os.remove(output_file_path)
-                else:
-                    break;
-        if not os.path.exists(output_file_path):
-            try:
-                with open(output_file_path, 'w', encoding='utf-8') as output_file:
-                    line_cnt = get_lyrics_without_encoding(output_file, link, html_content)
-            finally:
+                    try:
+                        with open(output_file_path, 'w', encoding='latin-1') as output_file:
+                            line_cnt = get_lyrics_without_encoding(output_file, link, html_content)
+                    finally:
+                        if line_cnt == 0:
+                            os.remove(output_file_path)
+                        else:
+                            break;
                 if line_cnt == 0:
-                    os.remove(output_file_path)
-                else:
-                    break;
+                    try:
+                        with open(output_file_path, 'w', encoding='utf-8') as output_file:
+                            line_cnt = get_lyrics_without_encoding(output_file, link, html_content)
+                    finally:
+                        if line_cnt == 0:
+                            os.remove(output_file_path)
+                        else:
+                            break;
     return line_cnt
 
 def get_lyrics(links_file_path, output_dir_path, debug_mode = 0):
@@ -414,7 +417,7 @@ if __name__ == '__main__':
         search_for_songs(songs_file_path, links_file_path, 0)
     # 这个函数自动搜索所有存着的url，但是可能里面的lyrics不让用
     output_dir_path = 'lyrics'
-    get_lyrics(links_file_path, output_dir_path, 0)
+    get_lyrics(links_file_path, output_dir_path, 788)
     #final_dir_path = 'moods_lyrics'
     #if not os.path.exists(final_dir_path):
     #    songs_dict = get_songs_dict(lyrics_file_path, songs_file_path)

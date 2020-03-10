@@ -6,8 +6,6 @@
 # User-specific files
 *.rsuser
 *.suo
-FetchData/lyrics/
-FetchData/MoodyLyrics/
 *.user
 *.userosscache
 *.sln.docstates

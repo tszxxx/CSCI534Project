@@ -21,6 +21,7 @@ options = ['https://genius.com/',
             'https://lyrics.fandom.com/wiki/',
             'https://www.metrolyrics.com/'
             ]
+stop_words = {'ourselves', 'hers', 'between', 'yourself', 'but', 'again', 'there', 'about', 'once', 'during', 'out', 'very', 'having', 'with', 'they', 'own', 'an', 'be', 'some', 'for', 'do', 'its', 'yours', 'such', 'into', 'of', 'most', 'itself', 'other', 'off', 'is', 's', 'am', 'or', 'who', 'as', 'from', 'him', 'each', 'the', 'themselves', 'until', 'below', 'are', 'we', 'these', 'your', 'his', 'through', 'don', 'nor', 'me', 'were', 'her', 'more', 'himself', 'this', 'down', 'should', 'our', 'their', 'while', 'above', 'both', 'up', 'to', 'ours', 'had', 'she', 'all', 'no', 'when', 'at', 'any', 'before', 'them', 'same', 'and', 'been', 'have', 'in', 'will', 'on', 'does', 'yourselves', 'then', 'that', 'because', 'what', 'over', 'why', 'so', 'can', 'did', 'not', 'now', 'under', 'he', 'you', 'herself', 'has', 'just', 'where', 'too', 'only', 'myself', 'which', 'those', 'i', 'after', 'few', 'whom', 't', 'being', 'if', 'theirs', 'my', 'against', 'a', 'by', 'doing', 'it', 'how', 'further', 'was', 'here', 'than'}
 
 def fetch_html(url):
     header = {
@@ -377,6 +378,7 @@ def get_words_split(links_file_path, lyrics_dir_path, words_dir_path):
                     cnt += 1
 
 def train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, words_option = 0):
+    global stop_words
     total_lines = 0
     with open(links_file_path, 'r', newline='', encoding='utf-8') as links_file:
         total_lines = len(links_file.readlines()) - 1
@@ -399,7 +401,7 @@ def train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, 
                         tokens = line.split()
                         for token in tokens:
                             token = token.translate(table).lower().strip()
-                            if len(token) > 0:
+                            if len(token) > 0 and token not in stop_words:
                                 if token not in existing_words:
                                     if token not in words_dict:
                                         words_dict[token] = {
@@ -488,21 +490,47 @@ def test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, n
 def calc_accuracy(nboutput_file_path):
     with open(nboutput_file_path, 'r') as nboutput_file:
         cnt = 0
-        acc = 0
+        f1_dict = {}
         for line in nboutput_file:
             if cnt > 0:
                 tokens = line.split(',')
-                if tokens[1].strip() == tokens[2].strip():
-                    acc += 1
+                if tokens[1].strip() not in f1_dict:
+                    f1_dict[tokens[1].strip()] = {
+                        'relaxed': 0,
+                        'angry': 0,
+                        'happy': 0,
+                        'sad': 0
+                    }
+                f1_dict[tokens[1].strip()][tokens[2].strip()] += 1
             cnt += 1
-        return acc / cnt
+        for certain_mood in ['relaxed', 'angry', 'happy', 'sad']:
+            true_positive = 0
+            false_positive = 0
+            false_negative = 0
+            true_negative = 0
+            for actual_mood in f1_dict:
+                if actual_mood == certain_mood:
+                    for predicted_mood in f1_dict[actual_mood]:
+                        if predicted_mood == actual_mood:
+                            true_negative += f1_dict[actual_mood][predicted_mood]
+                        else:
+                            false_negative += f1_dict[actual_mood][predicted_mood]
+                else:
+                    for predicted_mood in f1_dict[actual_mood]:
+                        if predicted_mood == actual_mood:
+                            true_positive += f1_dict[actual_mood][predicted_mood]
+                        else:
+                            false_positive += f1_dict[actual_mood][predicted_mood]
+            precision = true_positive / (true_positive + false_positive)
+            recall = true_positive / (true_positive + false_negative)
+            print(certain_mood, 2 * precision * recall / (precision + recall))
+
 
 if __name__ == '__main__':
     songs_file_path = 'MoodyLyrics/ml_raw.csv'
     links_file_path = 'lyrics_links.csv'
     if not os.path.exists(links_file_path):
         search_for_songs(songs_file_path, links_file_path, 0)
-    # 这个函数自动搜索所有存着的url，但是可能里面的lyrics不让用
     lyrics_dir_path = 'lyrics'
     if not os.path.exists(lyrics_dir_path):
         get_lyrics(links_file_path, lyrics_dir_path, 0)
@@ -517,4 +545,4 @@ if __name__ == '__main__':
     nboutput_file_path = 'nboutput.csv'
     if True or not os.path.exists(nboutput_file_path):
         test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path, words_option=1)
-    print(calc_accuracy(nboutput_file_path))
+    calc_accuracy(nboutput_file_path)

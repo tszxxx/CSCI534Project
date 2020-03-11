@@ -376,7 +376,7 @@ def get_words_split(links_file_path, lyrics_dir_path, words_dir_path):
                 else:
                     cnt += 1
 
-def train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path):
+def train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, words_option = 0):
     total_lines = 0
     with open(links_file_path, 'r', newline='', encoding='utf-8') as links_file:
         total_lines = len(links_file.readlines()) - 1
@@ -394,19 +394,23 @@ def train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path):
                     data = input_file.read()
                     encoding = chardet.detect(data)
                 with open(input_file_path, 'r', encoding=encoding['encoding']) as input_file:
+                    existing_words = set()
                     for line in input_file:
                         tokens = line.split()
                         for token in tokens:
                             token = token.translate(table).lower().strip()
                             if len(token) > 0:
-                                if token not in words_dict:
-                                    words_dict[token] = {
-                                        'relaxed': 0,
-                                        'angry': 0,
-                                        'happy': 0,
-                                        'sad': 0
-                                    }
-                                words_dict[token][mood] += 1
+                                if token not in existing_words:
+                                    if token not in words_dict:
+                                        words_dict[token] = {
+                                            'relaxed': 0,
+                                            'angry': 0,
+                                            'happy': 0,
+                                            'sad': 0
+                                        }
+                                    words_dict[token][mood] += 1
+                                if words_option != 0:
+                                    existing_words.add(token)
                 cnt += 1
                 print(cnt, '/', total_lines, end='\r')
             else:
@@ -430,7 +434,7 @@ def output_naive_bayes_model(nbmodel_file_path, words_dict):
     except BaseException as e:
         os.remove(nbmodel_file_path)
 
-def test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path):
+def test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path, words_option = 0):
     words_dict = {}
     with open(nbmodel_file_path, 'r') as nbmodel_file:
         cnt = 0
@@ -463,15 +467,19 @@ def test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, n
                         data = input_file.read()
                         encoding = chardet.detect(data)
                     with open(input_file_path, 'r', encoding=encoding['encoding']) as input_file:
+                        existing_words = set()
                         for line in input_file:
                             tokens = line.split()
                             for token in tokens:
                                 token = token.translate(table).lower().strip()
                                 if len(token) > 0 and token in words_dict:
-                                    total = sum(words_dict[token].values())
-                                    for mood in words_dict[token]:
-                                        possibility_dict[mood] += math.log2(words_dict[token][mood] / total)
-                    nboutput_file.write(record[0] + ',' + record[3] + ',' + max(possibility_dict, key=possibility_dict.get) + '\n')
+                                    if token not in existing_words:
+                                        total = sum(words_dict[token].values())
+                                        for mood in words_dict[token]:
+                                            possibility_dict[mood] += math.log2(words_dict[token][mood] / total)
+                                    if words_option != 0:
+                                        existing_words.add(token)
+                        nboutput_file.write(record[0] + ',' + record[3] + ',' + max(possibility_dict, key=possibility_dict.get) + '\n')
 
                 else:
                     nboutput_file.write('Index,actual mood,predicted mood\n')
@@ -502,11 +510,11 @@ if __name__ == '__main__':
     if not os.path.exists(words_dir_path):
         get_words_split(links_file_path, lyrics_dir_path, words_dir_path)
     nbmodel_file_path = 'nbmodel.csv'
-    if not os.path.exists(nbmodel_file_path):
-        words_dict = train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path)
+    if True or not os.path.exists(nbmodel_file_path):
+        words_dict = train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, words_option=0)
         smooth_naive_bayes_model(words_dict)
         output_naive_bayes_model(nbmodel_file_path, words_dict)
     nboutput_file_path = 'nboutput.csv'
-    if not os.path.exists(nboutput_file_path):
-        test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path)
+    if True or not os.path.exists(nboutput_file_path):
+        test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path, words_option=1)
     print(calc_accuracy(nboutput_file_path))

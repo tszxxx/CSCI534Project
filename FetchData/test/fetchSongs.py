@@ -9,12 +9,13 @@ import json
 import shutil
 
 def fetch_html(url, params = None):
+    header = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0'
+    }
+    request = urllib.request.Request(url, headers=header)
     try:
-        header = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.96 Safari/537.36'
-        }
-        request = urllib.request.Request(url, headers=header)
-        reponse = urllib.request.urlopen(request, params.encode('utf-8')).read()
+        reponse = urllib.request.urlopen(request)
+        reponse = reponse.read()
         return reponse
     except BaseException as e:
         return None
@@ -221,24 +222,24 @@ if __name__ == '__main__':
     if not os.path.exists(mood_file_path):
         response = fetch_html('https://www.allmusic.com/moods')
         process_html(response, mood_file_path)
-    lyrics_file_path = 'lyrics.csv'
-    if not os.path.exists(lyrics_file_path):
-        moods_link_list = get_moods_from_file(mood_file_path)
-        get_all_musics(moods_link_list, lyrics_file_path)
-    songs_file_path = 'songs.csv'
-    if not os.path.exists(songs_file_path):
-        get_artist_from_href(lyrics_file_path, songs_file_path)
-    links_file_path = 'links.csv'
-    if not os.path.exists(links_file_path):
-        search_for_lyrics(songs_file_path, links_file_path)
-    output_dir_path = 'lyrics'
-    if not os.path.exists(output_dir_path):
-        get_files_by_songs(links_file_path, output_dir_path)
-    final_dir_path = 'moods_lyrics'
-    if not os.path.exists(final_dir_path):
-        songs_dict = get_songs_dict(lyrics_file_path, songs_file_path)
-        get_final_dataset(songs_dict, output_dir_path, final_dir_path)
-    split_dir_path = 'split_lyrics'
+    #lyrics_file_path = 'lyrics.csv'
+    #if not os.path.exists(lyrics_file_path):
+    #    moods_link_list = get_moods_from_file(mood_file_path)
+    #    get_all_musics(moods_link_list, lyrics_file_path)
+    #songs_file_path = 'songs.csv'
+    #if not os.path.exists(songs_file_path):
+    #    get_artist_from_href(lyrics_file_path, songs_file_path)
+    #links_file_path = 'links.csv'
+    #if not os.path.exists(links_file_path):
+    #    search_for_lyrics(songs_file_path, links_file_path)
+    #output_dir_path = 'lyrics'
+    #if not os.path.exists(output_dir_path):
+    #    get_files_by_songs(links_file_path, output_dir_path)
+    #final_dir_path = 'moods_lyrics'
+    #if not os.path.exists(final_dir_path):
+    #    songs_dict = get_songs_dict(lyrics_file_path, songs_file_path)
+    #    get_final_dataset(songs_dict, output_dir_path, final_dir_path)
+    #split_dir_path = 'split_lyrics'
     #if not os.path.exists(split_dir_path):
     #    get_word_split(final_dir_path, split_dir_path)
-    get_word_split(final_dir_path, split_dir_path)
+    #get_word_split(final_dir_path, split_dir_path)

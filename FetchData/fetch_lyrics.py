@@ -6,9 +6,9 @@ from html.parser import HTMLParser
 import html
 import string
 import csv
-import json
-import shutil
-import winsound
+import stanfordnlp
+import chardet
+import math
 
 table = str.maketrans('','',string.punctuation)
 options = ['https://genius.com/',
@@ -157,7 +157,6 @@ def search_for_songs(songs_file_path, output_file_path, debug_mode = 0):
                     cnt += 1
     if isCrashed:
         os.remove(output_file_path)
-        winsound.Beep(600, 1000)
     print('\n----now fetch lyrics links from lyrics over----')
 
 def get_lyrics_without_encoding(output_file, link, html_content):
@@ -292,7 +291,7 @@ def test_extra_link(output_file_path, title, artist):
                         if line_cnt == 0:
                             os.remove(output_file_path)
                         else:
-                            break;
+                            break
     return line_cnt
 
 def get_lyrics(links_file_path, output_dir_path, debug_mode = 0):
@@ -336,79 +335,159 @@ def get_lyrics(links_file_path, output_dir_path, debug_mode = 0):
             cnt += 1
     print('\n----now fetch lyrics from lyrics over----')
 
-def get_songs_dict(lyrics_file_path, songs_file_path):
-    dicts = {}
-    lyrics_file = open(lyrics_file_path, 'r', encoding='utf-8')
-    songs_file = open(songs_file_path, 'r', encoding='utf-8')
+def get_words_split(links_file_path, lyrics_dir_path, words_dir_path):
+    if not os.path.exists(words_dir_path):
+        os.mkdir(words_dir_path)
+    lyrics_dir_path += '/'
+    words_dir_path += '/'
+    nlp = stanfordnlp.Pipeline(processors='tokenize,lemma', models_dir='/Users/hangjiezheng/Desktop/CSCI534/')
     cnt = 0
-    table = str.maketrans('','',string.punctuation)
-    p = HTMLParser()
-    for lyric in lyrics_file:
-        line = songs_file.readline()
-        song = p.unescape(line)
-        if cnt > 0:
-            tokens = song.split(',')
-            song_name = tokens[0].translate(table).strip()
-            mood = lyric.split(',')[0]
-            singer_name = tokens[1].translate(table).replace(' ','').lower().strip()
-            if song_name not in dicts:
-                dicts[song_name] = {}
-            if singer_name not in dicts[song_name]:
-                dicts[song_name][singer_name] = mood
-        else:
-            cnt += 1
+    total_lines = 0
+    with open(links_file_path, 'r', newline='', encoding='utf-8') as links_file:
+        total_lines = len(links_file.readlines()) - 1
+    with open(links_file_path, 'r', newline='', encoding='utf-8') as links_file:
+        with open(songs_file_path, 'r', newline='', encoding='utf-8') as input_file:
+            cnt = 0
+            spamreader = csv.reader(input_file, delimiter=',', quotechar='\"')
+            for record in spamreader:
+                if cnt > 0:
+                    input_file_path = lyrics_dir_path + record[0] + '.txt'
+                    output_file_path = words_dir_path + record[0] + '.txt'
+                    encoding = ''
+                    with open(input_file_path, 'rb') as input_file:
+                        data = input_file.read()
+                        encoding = chardet.detect(data)
+                    with open(input_file_path, 'r', encoding=encoding['encoding']) as input_file:
+                        try:
+                            with open(output_file_path, 'w', encoding=encoding['encoding']) as output_file:
+                                for line in input_file:
+                                    line = re.sub(r'\[[^\]]+\]', '', line)
+                                    line = re.sub(r'\([^\)]+\)', '', line)
+                                    line = line.strip()
+                                    if len(line) > 0:
+                                        words = nlp(line)
+                                        for sent in words.sentences:
+                                            for word in sent.words:
+                                                output_file.write(word.lemma + ' ')
+                        except BaseException as e:
+                            os.remove(output_file_path)
+                    cnt += 1
+                    print(cnt, '/', total_lines, end='\r')
+                else:
+                    cnt += 1
 
-    return dicts
-
-def get_final_dataset(songs_dict, output_dir_path, final_dir_path):
-    os.mkdir(final_dir_path)
-    cnt = 0
-    for root,dirs,files in os.walk(output_dir_path):
-        for file in files:
-            file_path = os.path.join(root,file)
-            tokens = file.split('.')
-            song_name = tokens[0]
-            singer_name = tokens[1]
-            try:
-                mood = songs_dict[song_name][singer_name]
-                target_dir = final_dir_path + '/' + mood
-                dir_str = '.'
-                for dir_part in target_dir.split('/'):
-                    dir_str += '/' + dir_part
-                    if not os.path.exists(dir_str):
-                        os.mkdir(dir_str)
-                shutil.copy(file_path, target_dir)
+def train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path):
+    total_lines = 0
+    with open(links_file_path, 'r', newline='', encoding='utf-8') as links_file:
+        total_lines = len(links_file.readlines()) - 1
+    words_dict = {}
+    words_dir_path += '/'
+    with open(links_file_path, 'r') as links_file:
+        cnt = 0
+        spamreader = csv.reader(links_file, delimiter=',', quotechar='\"')
+        for record in spamreader:
+            if cnt > 0:
+                mood = record[3]
+                input_file_path = words_dir_path + record[0] + '.txt'
+                encoding = ''
+                with open(input_file_path, 'rb') as input_file:
+                    data = input_file.read()
+                    encoding = chardet.detect(data)
+                with open(input_file_path, 'r', encoding=encoding['encoding']) as input_file:
+                    for line in input_file:
+                        tokens = line.split()
+                        for token in tokens:
+                            token = token.translate(table).lower().strip()
+                            if len(token) > 0:
+                                if token not in words_dict:
+                                    words_dict[token] = {
+                                        'relaxed': 0,
+                                        'angry': 0,
+                                        'happy': 0,
+                                        'sad': 0
+                                    }
+                                words_dict[token][mood] += 1
                 cnt += 1
-                print(cnt)
-            except BaseException as e:
-                print(e)
+                print(cnt, '/', total_lines, end='\r')
+            else:
+                cnt += 1
+    return words_dict
 
-def get_word_split(final_dir_path, split_dir_path):
-    # os.mkdir(split_dir_path)
-    p = HTMLParser()
-    for root,dirs,files in os.walk(final_dir_path):
-        for file in files:
-            file_path = os.path.join(root,file)
-            file_dirs = file_path.split('\\')
-            file_name = file_dirs.pop()
-            file_dirs[0] = split_dir_path
-            tmp_dir = '.'
-            for dir in file_dirs:
-                tmp_dir += '/' + dir
-                if not os.path.exists(tmp_dir):
-                    os.mkdir(tmp_dir)
-            output_file_path = tmp_dir + '/' + file_name
-            if not os.path.exists(output_file_path):
-                with open(output_file_path, 'w') as output_file:
-                    with open(file_path, 'r') as input_file:
+def smooth_naive_bayes_model(words_dict):
+    for token in words_dict:
+        for mood in words_dict[token]:
+            words_dict[token][mood] += 1
+
+def output_naive_bayes_model(nbmodel_file_path, words_dict):
+    try:
+        with open(nbmodel_file_path, 'w') as nbmodel_file:
+            nbmodel_file.write('word,relaxed,angry,happy,sad\n')
+            for token in words_dict:
+                nbmodel_file.write(token)
+                for mood in words_dict[token]:
+                    nbmodel_file.write(',' + str(words_dict[token][mood]))
+                nbmodel_file.write('\n')
+    except BaseException as e:
+        os.remove(nbmodel_file_path)
+
+def test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path):
+    words_dict = {}
+    with open(nbmodel_file_path, 'r') as nbmodel_file:
+        cnt = 0
+        moods = []
+        for line in nbmodel_file:
+            if cnt > 0:
+                tokens = line.split(',')
+                words_dict[tokens[0]] = {}
+                for i in range(len(moods)):
+                    words_dict[tokens[0]][moods[i].strip()] = int(tokens[i + 1].strip())
+            else:
+                moods = line.split(',')[1:]
+                cnt += 1
+    with open(links_file_path, 'r') as links_file:
+        with open(nboutput_file_path, 'w') as nboutput_file:
+            cnt = 0
+            words_dir_path += '/'
+            spamreader = csv.reader(links_file, delimiter=',', quotechar='\"')
+            for record in spamreader:
+                if cnt > 0:
+                    input_file_path = words_dir_path + record[0] + '.txt'
+                    encoding = ''
+                    possibility_dict = {
+                        'relaxed': 0,
+                        'angry': 0,
+                        'happy': 0,
+                        'sad': 0
+                    }
+                    with open(input_file_path, 'rb') as input_file:
+                        data = input_file.read()
+                        encoding = chardet.detect(data)
+                    with open(input_file_path, 'r', encoding=encoding['encoding']) as input_file:
                         for line in input_file:
-                            url = 'http://corenlp.run/?properties=%7B%22annotators%22%3A%20%22tokenize%2Cssplit%2Clemma%22%2C%20%22date%22%3A%20%222020-03-02T13%3A25%3A32%22%7D&pipelineLanguage=en'
-                            html_content = fetch_html(url, urllib.parse.quote(line.strip()))
-                            json_content = json.loads(html_content.decode('utf-8'))
-                            if len(json_content['sentences']) > 0:
-                                for tokens in json_content['sentences'][0]['tokens']:
-                                    output_file.write(tokens['lemma'] + ' ')
-                        print('finish', file_name)
+                            tokens = line.split()
+                            for token in tokens:
+                                token = token.translate(table).lower().strip()
+                                if len(token) > 0 and token in words_dict:
+                                    total = sum(words_dict[token].values())
+                                    for mood in words_dict[token]:
+                                        possibility_dict[mood] += math.log2(words_dict[token][mood] / total)
+                    nboutput_file.write(record[0] + ',' + record[3] + ',' + max(possibility_dict, key=possibility_dict.get) + '\n')
+
+                else:
+                    nboutput_file.write('Index,actual mood,predicted mood\n')
+                    cnt += 1
+
+def calc_accuracy(nboutput_file_path):
+    with open(nboutput_file_path, 'r') as nboutput_file:
+        cnt = 0
+        acc = 0
+        for line in nboutput_file:
+            if cnt > 0:
+                tokens = line.split(',')
+                if tokens[1].strip() == tokens[2].strip():
+                    acc += 1
+            cnt += 1
+        return acc / cnt
 
 if __name__ == '__main__':
     songs_file_path = 'MoodyLyrics/ml_raw.csv'
@@ -416,14 +495,18 @@ if __name__ == '__main__':
     if not os.path.exists(links_file_path):
         search_for_songs(songs_file_path, links_file_path, 0)
     # 这个函数自动搜索所有存着的url，但是可能里面的lyrics不让用
-    output_dir_path = 'lyrics'
-    if not os.path.exists(output_dir_path):
-        get_lyrics(links_file_path, output_dir_path, 0)
-    #final_dir_path = 'moods_lyrics'
-    #if not os.path.exists(final_dir_path):
-    #    songs_dict = get_songs_dict(lyrics_file_path, songs_file_path)
-    #    get_final_dataset(songs_dict, output_dir_path, final_dir_path)
-    #split_dir_path = 'split_lyrics'
-    ##if not os.path.exists(split_dir_path):
-    ##    get_word_split(final_dir_path, split_dir_path)
-    #get_word_split(final_dir_path, split_dir_path)
+    lyrics_dir_path = 'lyrics'
+    if not os.path.exists(lyrics_dir_path):
+        get_lyrics(links_file_path, lyrics_dir_path, 0)
+    words_dir_path = 'words'
+    if not os.path.exists(words_dir_path):
+        get_words_split(links_file_path, lyrics_dir_path, words_dir_path)
+    nbmodel_file_path = 'nbmodel.csv'
+    if not os.path.exists(nbmodel_file_path):
+        words_dict = train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path)
+        smooth_naive_bayes_model(words_dict)
+        output_naive_bayes_model(nbmodel_file_path, words_dict)
+    nboutput_file_path = 'nboutput.csv'
+    if not os.path.exists(nboutput_file_path):
+        test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path)
+    print(calc_accuracy(nboutput_file_path))

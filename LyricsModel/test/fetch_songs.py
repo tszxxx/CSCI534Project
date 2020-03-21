@@ -216,23 +216,24 @@ def get_lyrics_links(songs_file_path, lyrics_link_path):
                 if cnt > 0:
                     title = record[1].strip()
                     artist = record[2].strip()
+                    mood = record[3].strip()
                     html_content = None
                     for option in options:
                         url = get_url_by_option(option, title, artist)
                         if url is not None:
                             html_content = fetch_html(url)
                             if html_content is not None:
-                                spamwriter.writerow([str(cnt), title, artist, url])
+                                spamwriter.writerow([str(cnt), title, artist, mood, url])
                                 break
                     if html_content is None:
-                        spamwriter.writerow([str(cnt), title, artist])
+                        spamwriter.writerow([str(cnt), title, artist, mood])
                         print(cnt, artist, title, end='\n')
                         # isCrashed = True
                         # break
                     else:
                         print(cnt, '/', total_lines, end='\n')
                 else:
-                    spamwriter.writerow(['Index', 'Title', 'Artist', 'Link'])
+                    spamwriter.writerow(['Index', 'Title', 'Artist', 'Mood', 'Link'])
                 cnt += 1
     if isCrashed:
         os.remove(lyrics_link_path)
@@ -444,13 +445,14 @@ def test_naive_bayes_model(songs_file_path, words_dir_path, nbmodel_file_path, n
                                 tokens = line.split()
                                 for token in tokens:
                                     token = token.translate(table).lower().strip()
-                                    if len(token) > 0 and token in words_dict:
-                                        if token not in existing_words:
-                                            total = sum(words_dict[token].values())
-                                            for mood in words_dict[token]:
-                                                possibility_dict[mood] += math.log2(words_dict[token][mood] / total)
-                                        if words_option != 0:
-                                            existing_words.add(token)
+                                    if len(token) > 0:
+                                        if token in words_dict:
+                                            if token not in existing_words:
+                                                total = sum(words_dict[token].values())
+                                                for mood in words_dict[token]:
+                                                    possibility_dict[mood] += math.log2(words_dict[token][mood] / total)
+                                            if words_option != 0:
+                                                existing_words.add(token)
                             nboutput_file.write(record[0] + ',' + record[3] + ',' + max(possibility_dict, key=possibility_dict.get) + '\n')
                     else:
                         nboutput_file.write(record[0] + ',' + record[3] + '\n')
@@ -495,7 +497,36 @@ def calc_accuracy(nboutput_file_path):
                             false_positive += f1_dict[actual_mood][predicted_mood]
             precision = true_positive / (true_positive + false_positive)
             recall = true_positive / (true_positive + false_negative)
-            print(certain_mood, 2 * precision * recall / (precision + recall))
+            print(certain_mood, precision, recall, 2 * precision * recall / (precision + recall))
+
+def get_balanced_testset(lyrics_link_path, balanced_file_path):
+    labels = None
+    lists = []
+    mood_dict = {
+        'Relaxed': [],
+        'Sad': [],
+        'Happy': [],
+        'Angry': []
+    }
+    with open(lyrics_link_path, 'r', encoding='utf-8') as lyrics_link:
+        cnt = 0
+        spamreader = csv.reader(lyrics_link, delimiter=',', quotechar='\"')
+        for record in spamreader:
+            if cnt > 0:
+                if len(record) == 5:
+                    mood_dict[record[3]].append(record)
+            else:
+                labels = record
+            cnt += 1
+    with open(balanced_file_path, 'w', encoding='utf-8') as balanced_file:
+        spamwriter = csv.writer(balanced_file, delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
+        spamwriter.writerow(labels)
+        min_len = min(len(mood_dict['Relaxed']), len(mood_dict['Sad']), len(mood_dict['Happy']), len(mood_dict['Angry']))
+        for i in range(min_len):
+            spamwriter.writerow(mood_dict['Relaxed'][i])
+            spamwriter.writerow(mood_dict['Sad'][i])
+            spamwriter.writerow(mood_dict['Happy'][i])
+            spamwriter.writerow(mood_dict['Angry'][i])
 
 if __name__ == '__main__':
     mood_list_file_path = 'mood_list.csv'
@@ -517,6 +548,9 @@ if __name__ == '__main__':
         for root, dirs, files in os.walk(lyrics_dir_path):
             for input_file_path in files:
                 get_words_split_for_one_file(input_file_path, lyrics_dir_path, words_dir_path, nlp)
+    balanced_file_path = 'balanced.csv'
+    if not os.path.exists(balanced_file_path):
+        get_balanced_testset(lyrics_link_path, balanced_file_path)
     nbmodel_file_path = '../train/nbmodel.csv'
     nboutput_file_path = 'nboutput.csv'
     test_naive_bayes_model(songs_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path, words_option=0)

@@ -9,6 +9,7 @@ import csv
 import stanfordnlp
 import chardet
 import math
+import autocorrect
 
 table = str.maketrans('','',string.punctuation)
 options = ['https://genius.com/',
@@ -336,7 +337,7 @@ def get_lyrics(links_file_path, output_dir_path, debug_mode = 0):
             cnt += 1
     print('\n----now fetch lyrics from lyrics over----')
 
-def get_words_split(links_file_path, lyrics_dir_path, words_dir_path):
+def get_words_split(links_file_path, lyrics_dir_path, words_dir_path, debug_mode=3000):
     if not os.path.exists(words_dir_path):
         os.mkdir(words_dir_path)
     lyrics_dir_path += '/'
@@ -351,7 +352,7 @@ def get_words_split(links_file_path, lyrics_dir_path, words_dir_path):
             cnt = 0
             spamreader = csv.reader(input_file, delimiter=',', quotechar='\"')
             for record in spamreader:
-                if cnt > 0:
+                if cnt > 0 and cnt < debug_mode:
                     input_file_path = lyrics_dir_path + record[0] + '.txt'
                     output_file_path = words_dir_path + record[0] + '.txt'
                     encoding = ''
@@ -376,13 +377,14 @@ def get_words_split(links_file_path, lyrics_dir_path, words_dir_path):
                     print(cnt, '/', total_lines, end='\n')
                 cnt += 1
 
-def train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, words_option = 0):
+def train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, words_option = 0, use_correct=False):
     global stop_words
     total_lines = 0
     with open(links_file_path, 'r', newline='', encoding='utf-8') as links_file:
         total_lines = len(links_file.readlines()) - 1
     words_dict = {}
     words_dir_path += '/'
+    spller = autocorrect.Speller(lang='en')
     with open(links_file_path, 'r') as links_file:
         cnt = 0
         spamreader = csv.reader(links_file, delimiter=',', quotechar='\"')
@@ -401,6 +403,8 @@ def train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, 
                         for token in tokens:
                             token = token.translate(table).lower().strip()
                             if len(token) > 0 and token not in stop_words:
+                                if use_correct:
+                                    token = spller(token)
                                 if token not in existing_words:
                                     if token not in words_dict:
                                         words_dict[token] = {
@@ -412,10 +416,8 @@ def train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, 
                                     words_dict[token][mood] += 1
                                 if words_option != 0:
                                     existing_words.add(token)
-                cnt += 1
-                print(cnt, '/', total_lines, end='\r')
-            else:
-                cnt += 1
+                print(cnt, '/', total_lines, end='\n')
+            cnt += 1
     return words_dict
 
 def smooth_naive_bayes_model(words_dict):
@@ -435,8 +437,13 @@ def output_naive_bayes_model(nbmodel_file_path, words_dict):
     except BaseException as e:
         os.remove(nbmodel_file_path)
 
-def test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path, words_option = 0):
+def test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path, words_option = 0, use_correct=False):
     words_dict = {}
+    spller = autocorrect.Speller(lang='en')
+    total_lines = 0
+    with open(links_file_path, 'r', newline='', encoding='utf-8') as links_file:
+        total_lines = len(links_file.readlines()) - 1
+
     with open(nbmodel_file_path, 'r') as nbmodel_file:
         cnt = 0
         moods = []
@@ -473,6 +480,8 @@ def test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, n
                             tokens = line.split()
                             for token in tokens:
                                 token = token.translate(table).lower().strip()
+                                if use_correct:
+                                    token = spller(token)
                                 if len(token) > 0 and token in words_dict:
                                     if token not in existing_words:
                                         total = sum(words_dict[token].values())
@@ -481,10 +490,10 @@ def test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, n
                                     if words_option != 0:
                                         existing_words.add(token)
                         nboutput_file.write(record[0] + ',' + record[3] + ',' + max(possibility_dict, key=possibility_dict.get) + '\n')
-
+                    print(cnt, '/', total_lines)
                 else:
                     nboutput_file.write('Index,actual mood,predicted mood\n')
-                    cnt += 1
+                cnt += 1
 
 def calc_accuracy(nboutput_file_path):
     with open(nboutput_file_path, 'r') as nboutput_file:
@@ -534,14 +543,15 @@ if __name__ == '__main__':
     if not os.path.exists(lyrics_dir_path):
         get_lyrics(links_file_path, lyrics_dir_path, 0)
     words_dir_path = 'words'
-    if True or not os.path.exists(words_dir_path):
+    if not os.path.exists(words_dir_path):
         get_words_split(links_file_path, lyrics_dir_path, words_dir_path)
     nbmodel_file_path = 'nbmodel.csv'
+    balanced_file_path = 'MoodyLyrics/ml_balanced.csv'
     if True or not os.path.exists(nbmodel_file_path):
-        words_dict = train_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, words_option=0)
+        words_dict = train_naive_bayes_model(balanced_file_path, words_dir_path, nbmodel_file_path, words_option=0)
         smooth_naive_bayes_model(words_dict)
         output_naive_bayes_model(nbmodel_file_path, words_dict)
     nboutput_file_path = 'nboutput.csv'
     if True or not os.path.exists(nboutput_file_path):
-        test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path, words_option=1)
+        test_naive_bayes_model(balanced_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path, words_option=0)
     calc_accuracy(nboutput_file_path)

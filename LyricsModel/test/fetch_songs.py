@@ -406,99 +406,6 @@ def get_words_split_for_one_file(file_path, lyrics_dir_path, words_dir_path, nlp
         except BaseException as e:
             os.remove(output_file_path)
 
-def test_naive_bayes_model(songs_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path, words_option = 0):
-    words_dict = {}
-    with open(nbmodel_file_path, 'r') as nbmodel_file:
-        cnt = 0
-        moods = []
-        for line in nbmodel_file:
-            if cnt > 0:
-                tokens = line.split(',')
-                words_dict[tokens[0]] = {}
-                for i in range(len(moods)):
-                    words_dict[tokens[0]][moods[i].strip()] = int(tokens[i + 1].strip())
-            else:
-                moods = line.split(',')[1:]
-                cnt += 1
-    with open(songs_file_path, 'r') as links_file:
-        with open(nboutput_file_path, 'w') as nboutput_file:
-            cnt = 0
-            words_dir_path += '/'
-            spamreader = csv.reader(links_file, delimiter=',', quotechar='\"')
-            for record in spamreader:
-                if cnt > 0:
-                    input_file_path = words_dir_path + record[0] + '.txt'
-                    if os.path.exists(input_file_path):
-                        encoding = ''
-                        possibility_dict = {
-                            'relaxed': 0,
-                            'angry': 0,
-                            'happy': 0,
-                            'sad': 0
-                        }
-                        with open(input_file_path, 'rb') as input_file:
-                            data = input_file.read()
-                            encoding = chardet.detect(data)
-                        with open(input_file_path, 'r', encoding=encoding['encoding']) as input_file:
-                            existing_words = set()
-                            for line in input_file:
-                                tokens = line.split()
-                                for token in tokens:
-                                    token = token.translate(table).lower().strip()
-                                    if len(token) > 0:
-                                        if token in words_dict:
-                                            if token not in existing_words:
-                                                total = sum(words_dict[token].values())
-                                                for mood in words_dict[token]:
-                                                    possibility_dict[mood] += math.log2(words_dict[token][mood] / total)
-                                            if words_option != 0:
-                                                existing_words.add(token)
-                            nboutput_file.write(record[0] + ',' + record[3] + ',' + max(possibility_dict, key=possibility_dict.get) + '\n')
-                    else:
-                        nboutput_file.write(record[0] + ',' + record[3] + '\n')
-
-                else:
-                    nboutput_file.write('Index,actual mood,predicted mood\n')
-                    cnt += 1
-
-def calc_accuracy(nboutput_file_path):
-    with open(nboutput_file_path, 'r') as nboutput_file:
-        cnt = 0
-        f1_dict = {}
-        for line in nboutput_file:
-            if cnt > 0 and len(line.split(',')) == 3:
-                tokens = line.split(',')
-                if tokens[1].strip() not in f1_dict:
-                    f1_dict[tokens[1].strip()] = {
-                        'relaxed': 0,
-                        'angry': 0,
-                        'happy': 0,
-                        'sad': 0
-                    }
-                f1_dict[tokens[1].strip()][tokens[2].strip()] += 1
-            cnt += 1
-        for certain_mood in ['relaxed', 'angry', 'happy', 'sad']:
-            true_positive = 0
-            false_positive = 0
-            false_negative = 0
-            true_negative = 0
-            for actual_mood in f1_dict:
-                if actual_mood.lower() == certain_mood.lower():
-                    for predicted_mood in f1_dict[actual_mood]:
-                        if predicted_mood.lower() == actual_mood.lower():
-                            true_negative += f1_dict[actual_mood][predicted_mood]
-                        else:
-                            false_negative += f1_dict[actual_mood][predicted_mood]
-                else:
-                    for predicted_mood in f1_dict[actual_mood]:
-                        if predicted_mood.lower() == actual_mood.lower():
-                            true_positive += f1_dict[actual_mood][predicted_mood]
-                        else:
-                            false_positive += f1_dict[actual_mood][predicted_mood]
-            precision = true_positive / (true_positive + false_positive)
-            recall = true_positive / (true_positive + false_negative)
-            print(certain_mood, precision, recall, 2 * precision * recall / (precision + recall))
-
 def get_balanced_testset(lyrics_link_path, balanced_file_path):
     labels = None
     lists = []
@@ -551,7 +458,3 @@ if __name__ == '__main__':
     balanced_file_path = 'balanced.csv'
     if not os.path.exists(balanced_file_path):
         get_balanced_testset(lyrics_link_path, balanced_file_path)
-    nbmodel_file_path = '../train/nbmodel.csv'
-    nboutput_file_path = 'nboutput.csv'
-    test_naive_bayes_model(songs_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path, words_option=0)
-    calc_accuracy(nboutput_file_path)

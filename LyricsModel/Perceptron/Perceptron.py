@@ -107,6 +107,125 @@ def output_average(output_file_path, average_dict, average_bias, vanilla_dict, v
         output_file.write('\n')
         output_file.write(str(final_average_bias))
 
+def test_perceptron_positive_negative(tokens, positive_negative):
+    global perceptron_pn_dict, perceptron_pn_bias
+    global pos_true_pos, pos_true_neg, pos_false_pos, pos_false_neg
+    res_pn = perceptron_pn_bias
+
+    for token in tokens:
+        res_pn += perceptron_pn_dict.setdefault(token, 0)
+    if positive_negative == 'positive':
+        if res_pn <= 0:
+            pos_false_neg += 1
+        else:
+            pos_true_pos += 1
+    else:
+        if res_pn >= 0:
+            pos_false_pos += 1
+        else:
+            pos_true_neg += 1
+    return res_pn
+
+def test_perceptron(file_path, positive_negative, truthful_deceptive, output_file):
+    global stop_words
+    all_token = []
+    file = open(file_path, 'r')
+    line = file.readline()
+    table = str.maketrans('','',string.punctuation)
+
+    while line!='':
+        tokens = re.split(r'[\.|\,|\ ]', line)
+        for token in tokens:
+            lowercase_token = token.translate(table).strip('\n')
+            if lowercase_token not in all_token and lowercase_token != '' and lowercase_token not in stop_words and not re.search(r'\d', lowercase_token):
+                all_token.append(lowercase_token)
+        line = file.readline()
+    file.close()
+    res_td = test_perceptron_truthful_deceptive(all_token, truthful_deceptive)
+    if res_td > 0:
+        output_file.write('truthful\t')
+    else:
+        output_file.write('deceptive\t')
+
+    res_pn = test_perceptron_positive_negative(all_token, positive_negative)
+    if res_pn > 0:
+        output_file.write('positive\t')
+    else:
+        output_file.write('negative\t')
+
+    output_file.write(file_path.replace('\\','/') + '\n')
+
+def calc_f1score(true_positive, false_positive, true_negative, false_negative):
+    precision = true_positive / (true_positive + false_positive)
+    recall = true_positive / (true_positive + false_negative)
+    print('precison:\t', precision)
+    print('recall:\t', recall)
+    return 2 * precision * recall / (precision + recall)
+ 
+def load_perceptron(model_path):
+    global perceptron_pn_dict, perceptron_td_dict
+    global perceptron_pn_bias, perceptron_td_bias
+    cnt = 0
+    file = open(model_path, 'r')
+    line = file.readline()
+    while line!='':
+        if cnt == 0:
+            cnt += 1
+        elif cnt == 1:
+            tokens = line.split()
+            perceptron_pn_bias = float(tokens[1])
+            cnt += 1
+        elif cnt == 2:
+            cnt += 1
+        elif line == 'for truthful/deceptive\n':
+            cnt = 4
+        elif cnt == 3:
+            tokens = line.split()
+            perceptron_pn_dict[tokens[0]] = float(tokens[1])
+        elif cnt == 4:
+            tokens = line.split()
+            perceptron_td_bias = float(tokens[1])
+            cnt += 1
+        elif cnt == 5:
+            cnt += 1
+        else:
+            tokens = line.split()
+            perceptron_td_dict[tokens[0]] = float(tokens[1])
+        line = file.readline()
+
+if __name__ == '__main__':
+    model_path = sys.argv[1]
+    input_path = sys.argv[2]
+    output_file = open('percepoutput.txt', 'w')
+    load_perceptron(model_path)
+    for root,dirs,files in os.walk(input_path):
+        for file in files:
+            file_path = os.path.join(root,file)
+            if file_path.find('.txt') != -1 and file_path.find('README') == -1 and file_path.find('fold1')!=-1:
+
+                if file_path.find('positive')!=-1:
+                    positive_negative = 'positive'
+                else:
+                    positive_negative = 'negative'
+
+                if file_path.find('truthful')!=-1:
+                    truthful_deceptive = 'truthful'
+                else:
+                    truthful_deceptive = 'deceptive'
+                test_perceptron(file_path, positive_negative, truthful_deceptive, output_file)  
+    output_file.close()    
+    #print(b - a)
+    #for [file, positive_negative, truthful_deceptive] in test_path_list:
+    #    test_vanilla_perceptron(file, positive_negative, truthful_deceptive)
+
+    #F1_1 = calc_f1score(pos_true_pos, pos_false_pos, pos_true_neg, pos_false_neg)
+    #F1_2 = calc_f1score(pos_true_neg, pos_false_neg, pos_true_pos, pos_false_pos)
+    #F2_1 = calc_f1score(truu_true_pos, truu_false_pos, truu_true_neg, truu_false_neg)
+    #F2_2 = calc_f1score(truu_true_neg, truu_false_neg, truu_true_pos, truu_false_pos)
+
+    #print(F1_1, F1_2, F2_1, F2_2)
+    #print((F1_1 + F1_2 + F2_1 + F2_2) / 4)
+
 if __name__ == '__main__':
     train_balanced_file_path = '../train/MoodyLyrics/ml_balanced.csv'
     train_dir_path = '../train/words'

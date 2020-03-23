@@ -2,6 +2,7 @@ import csv
 import chardet
 import string
 import json
+import os
 from random import shuffle
 
 table = str.maketrans('', '', string.punctuation)
@@ -208,7 +209,7 @@ def calc_f1score(input_file_path_prefix, mid, postfix):
             cnt += 1
     precision = true_positive / (true_positive + false_positive)
     recall = true_positive / (true_positive + false_negative)
-    print('for', mid, ':')
+    print('for' + mid.replace('_', ' '), ':')
     print('\tprecison:\t', precision)
     print('\trecall:\t', recall)
     print('\tf1_score:\t', 2 * precision * recall / (precision + recall))
@@ -222,25 +223,30 @@ def input_perceptron(perceptron_model_path):
 if __name__ == '__main__':
     train_balanced_file_path = '../train/MoodyLyrics/ml_balanced.csv'
     train_dir_path = '../train/words'
-    arousal_train_data, valence_train_data = get_train_content(train_balanced_file_path, train_dir_path)
 
-    arousal_vanilla_dict, arousal_vanilla_bias, arousal_average_dict, arousal_average_bias \
-        = train_perceptron(arousal_train_data, 100)
-    valence_vanilla_dict, valence_vanilla_bias, valence_average_dict, valence_average_bias \
-        = train_perceptron(valence_train_data, 100)
+    if not os.path.exists('arousal_vanillamodel.txt') \
+        or not os.path.exists('arousal_averagedmodel.tx') \
+        or not os.path.exists('valence_vanillamodel.tx') \
+        or not os.path.exists('valence_averagedmodel.tx'):
+        arousal_train_data, valence_train_data = get_train_content(train_balanced_file_path, train_dir_path)
 
-    output_vanilla('arousal_vanillamodel.txt', arousal_vanilla_dict, arousal_vanilla_bias)
-    output_average('arousal_averagedmodel.txt', arousal_average_dict, arousal_average_bias, arousal_vanilla_dict, arousal_vanilla_bias, 100 * 2 * len(arousal_train_data[0]))
-    output_vanilla('valence_vanillamodel.txt', valence_vanilla_dict, valence_vanilla_bias)
-    output_average('valence_averagedmodel.txt', valence_average_dict, valence_average_bias, valence_vanilla_dict, valence_vanilla_bias, 100 * 2 * len(valence_train_data[0]))
+        arousal_vanilla_dict, arousal_vanilla_bias, arousal_average_dict, arousal_average_bias \
+            = train_perceptron(arousal_train_data, 100)
+        valence_vanilla_dict, valence_vanilla_bias, valence_average_dict, valence_average_bias \
+            = train_perceptron(valence_train_data, 100)
+
+        output_vanilla('arousal_vanillamodel.txt', arousal_vanilla_dict, arousal_vanilla_bias)
+        output_average('arousal_averagedmodel.txt', arousal_average_dict, arousal_average_bias, arousal_vanilla_dict, arousal_vanilla_bias, 100 * 2 * len(arousal_train_data[0]))
+        output_vanilla('valence_vanillamodel.txt', valence_vanilla_dict, valence_vanilla_bias)
+        output_average('valence_averagedmodel.txt', valence_average_dict, valence_average_bias, valence_vanilla_dict, valence_vanilla_bias, 100 * 2 * len(valence_train_data[0]))
 
     arousal_vanilla_dict, arousal_vanilla_bias = input_perceptron('arousal_vanillamodel.txt')
     arousal_average_dict, arousal_average_bias = input_perceptron('arousal_averagedmodel.txt')
     valence_vanilla_dict, valence_vanilla_bias = input_perceptron('valence_vanillamodel.txt')
     valence_average_dict, valence_average_bias = input_perceptron('valence_averagedmodel.txt')
 
-    test_file_path = '../train/MoodyLyrics/ml_balanced.csv'
-    test_dir_path = '../train/words'
+    test_file_path = '../test/balanced.csv'
+    test_dir_path = '../test/words'
     output_file_path = 'percepoutput'
     test_perceptron_arousal(test_file_path, test_dir_path, arousal_vanilla_dict, arousal_vanilla_bias,
                             output_file_path + '_arousal' + '_vanialla' + '.csv')

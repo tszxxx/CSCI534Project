@@ -99,7 +99,7 @@ def output_average(output_file_path, average_dict, average_bias, vanilla_dict, v
     final_average_dict = {}
     final_average_bias = vanilla_bias - average_bias / total_samples
     for token in average_dict:
-        coefficient = vanilla_dict[token] - average_dict[token] / total_samples
+        coefficient = vanilla_dict.get(token, 0) - average_dict[token] / total_samples
         if coefficient != 0:
             final_average_dict[token] = coefficient
     with open(output_file_path, 'w', encoding='utf-8') as output_file:
@@ -107,124 +107,117 @@ def output_average(output_file_path, average_dict, average_bias, vanilla_dict, v
         output_file.write('\n')
         output_file.write(str(final_average_bias))
 
-def test_perceptron_positive_negative(tokens, positive_negative):
-    global perceptron_pn_dict, perceptron_pn_bias
-    global pos_true_pos, pos_true_neg, pos_false_pos, pos_false_neg
-    res_pn = perceptron_pn_bias
-
-    for token in tokens:
-        res_pn += perceptron_pn_dict.setdefault(token, 0)
-    if positive_negative == 'positive':
-        if res_pn <= 0:
-            pos_false_neg += 1
-        else:
-            pos_true_pos += 1
-    else:
-        if res_pn >= 0:
-            pos_false_pos += 1
-        else:
-            pos_true_neg += 1
-    return res_pn
-
-def test_perceptron(file_path, positive_negative, truthful_deceptive, output_file):
-    global stop_words
+def test_perceptron_valence(test_file_path, test_dir_path, valence_dict, valence_bias, output_file_path):
+    global stop_words, table
     all_token = []
-    file = open(file_path, 'r')
-    line = file.readline()
-    table = str.maketrans('','',string.punctuation)
+    test_dir_path += '/'
+    with open(output_file_path, 'w', encoding='utf-8') as output_file:
+        with open(test_file_path, 'r', encoding='utf-8') as test_file:
+            cnt = 0
+            spamreader = csv.reader(test_file, delimiter=',', quotechar='\"')
+            for records in spamreader:
+                if cnt > 0:
+                    input_file_path = test_dir_path + records[0] + '.txt'
+                    all_token = []
+                    encoding = ''
+                    with open(input_file_path, 'rb') as input_file:
+                        data = input_file.read()
+                        encoding = chardet.detect(data)
+                    with open(input_file_path, 'r', encoding=encoding['encoding']) as input_file:
+                        for line in input_file:
+                            tokens = line.split()
+                            for token in tokens:
+                                token = token.translate(table).lower().strip()
+                                if len(token) > 0 and token not in stop_words and token not in all_token:
+                                    all_token.append(token)
+                    mood = records[3].lower()
+                    if mood == 'happy' or mood == 'relaxed':
+                        output_file.write(records[0] + ',' + 'positive' + ',')
+                    else:
+                        output_file.write(records[0] + ',' + 'negative' + ',')
 
-    while line!='':
-        tokens = re.split(r'[\.|\,|\ ]', line)
-        for token in tokens:
-            lowercase_token = token.translate(table).strip('\n')
-            if lowercase_token not in all_token and lowercase_token != '' and lowercase_token not in stop_words and not re.search(r'\d', lowercase_token):
-                all_token.append(lowercase_token)
-        line = file.readline()
-    file.close()
-    res_td = test_perceptron_truthful_deceptive(all_token, truthful_deceptive)
-    if res_td > 0:
-        output_file.write('truthful\t')
-    else:
-        output_file.write('deceptive\t')
+                    res = valence_bias
+                    for token in all_token:
+                        res += valence_dict.get(token, 0)
+                    if res > 0:
+                        output_file.write('positive' + '\n')
+                    else:
+                        output_file.write('negative' + '\n')
+                else:
+                    output_file.write('Index,Actual Valence,Predicted Valence\n')
+                cnt += 1
 
-    res_pn = test_perceptron_positive_negative(all_token, positive_negative)
-    if res_pn > 0:
-        output_file.write('positive\t')
-    else:
-        output_file.write('negative\t')
+def test_perceptron_arousal(test_file_path, test_dir_path, arousal_dict, arousal_bias, output_file_path):
+    global stop_words, table
+    all_token = []
+    test_dir_path += '/'
+    with open(output_file_path, 'w', encoding='utf-8') as output_file:
+        with open(test_file_path, 'r', encoding='utf-8') as test_file:
+            cnt = 0
+            spamreader = csv.reader(test_file, delimiter=',', quotechar='\"')
+            for records in spamreader:
+                if cnt > 0:
+                    input_file_path = test_dir_path + records[0] + '.txt'
+                    all_token = []
+                    encoding = ''
+                    with open(input_file_path, 'rb') as input_file:
+                        data = input_file.read()
+                        encoding = chardet.detect(data)
+                    with open(input_file_path, 'r', encoding=encoding['encoding']) as input_file:
+                        for line in input_file:
+                            tokens = line.split()
+                            for token in tokens:
+                                token = token.translate(table).lower().strip()
+                                if len(token) > 0 and token not in stop_words and token not in all_token:
+                                    all_token.append(token)
+                    mood = records[3].lower()
+                    if mood == 'happy' or mood == 'angry':
+                        output_file.write(records[0] + ',' + 'positive' + ',')
+                    else:
+                        output_file.write(records[0] + ',' + 'negative' + ',')
 
-    output_file.write(file_path.replace('\\','/') + '\n')
+                    res = arousal_bias
+                    for token in all_token:
+                        res += arousal_dict.get(token, 0)
+                    if res > 0:
+                        output_file.write('positive' + '\n')
+                    else:
+                        output_file.write('negative' + '\n')
+                else:
+                    output_file.write('Index,Actual Arousal,Predicted Arousal\n')
+                cnt += 1
 
-def calc_f1score(true_positive, false_positive, true_negative, false_negative):
+def calc_f1score(input_file_path_prefix, mid, postfix):
+    input_file_path = input_file_path_prefix + mid + postfix
+    true_positive, false_positive, false_negative, true_negative = 0, 0, 0, 0
+    with open(input_file_path, 'r', encoding='utf-8') as input_file:
+        cnt = 0
+        for line in input_file:
+            if cnt > 0:
+                token = line.split(',')
+                if token[1] == 'positive':
+                    if token[2].strip() == 'positive':
+                        true_positive += 1
+                    else:
+                        false_negative += 1
+                else:
+                    if token[2].strip() == 'positive':
+                        false_positive += 1
+                    else:
+                        true_negative += 1
+            cnt += 1
     precision = true_positive / (true_positive + false_positive)
     recall = true_positive / (true_positive + false_negative)
-    print('precison:\t', precision)
-    print('recall:\t', recall)
-    return 2 * precision * recall / (precision + recall)
+    print('for', mid, ':')
+    print('\tprecison:\t', precision)
+    print('\trecall:\t', recall)
+    print('\tf1_score:\t', 2 * precision * recall / (precision + recall))
  
-def load_perceptron(model_path):
-    global perceptron_pn_dict, perceptron_td_dict
-    global perceptron_pn_bias, perceptron_td_bias
-    cnt = 0
-    file = open(model_path, 'r')
-    line = file.readline()
-    while line!='':
-        if cnt == 0:
-            cnt += 1
-        elif cnt == 1:
-            tokens = line.split()
-            perceptron_pn_bias = float(tokens[1])
-            cnt += 1
-        elif cnt == 2:
-            cnt += 1
-        elif line == 'for truthful/deceptive\n':
-            cnt = 4
-        elif cnt == 3:
-            tokens = line.split()
-            perceptron_pn_dict[tokens[0]] = float(tokens[1])
-        elif cnt == 4:
-            tokens = line.split()
-            perceptron_td_bias = float(tokens[1])
-            cnt += 1
-        elif cnt == 5:
-            cnt += 1
-        else:
-            tokens = line.split()
-            perceptron_td_dict[tokens[0]] = float(tokens[1])
-        line = file.readline()
-
-if __name__ == '__main__':
-    model_path = sys.argv[1]
-    input_path = sys.argv[2]
-    output_file = open('percepoutput.txt', 'w')
-    load_perceptron(model_path)
-    for root,dirs,files in os.walk(input_path):
-        for file in files:
-            file_path = os.path.join(root,file)
-            if file_path.find('.txt') != -1 and file_path.find('README') == -1 and file_path.find('fold1')!=-1:
-
-                if file_path.find('positive')!=-1:
-                    positive_negative = 'positive'
-                else:
-                    positive_negative = 'negative'
-
-                if file_path.find('truthful')!=-1:
-                    truthful_deceptive = 'truthful'
-                else:
-                    truthful_deceptive = 'deceptive'
-                test_perceptron(file_path, positive_negative, truthful_deceptive, output_file)  
-    output_file.close()    
-    #print(b - a)
-    #for [file, positive_negative, truthful_deceptive] in test_path_list:
-    #    test_vanilla_perceptron(file, positive_negative, truthful_deceptive)
-
-    #F1_1 = calc_f1score(pos_true_pos, pos_false_pos, pos_true_neg, pos_false_neg)
-    #F1_2 = calc_f1score(pos_true_neg, pos_false_neg, pos_true_pos, pos_false_pos)
-    #F2_1 = calc_f1score(truu_true_pos, truu_false_pos, truu_true_neg, truu_false_neg)
-    #F2_2 = calc_f1score(truu_true_neg, truu_false_neg, truu_true_pos, truu_false_pos)
-
-    #print(F1_1, F1_2, F2_1, F2_2)
-    #print((F1_1 + F1_2 + F2_1 + F2_2) / 4)
+def input_perceptron(perceptron_model_path):
+    with open(perceptron_model_path, 'r', encoding='utf-8') as input_file:
+        perceptron_dict = json.loads(input_file.readline())
+        perceptron_bias = float(input_file.readline())
+        return perceptron_dict, perceptron_bias
 
 if __name__ == '__main__':
     train_balanced_file_path = '../train/MoodyLyrics/ml_balanced.csv'
@@ -237,6 +230,27 @@ if __name__ == '__main__':
         = train_perceptron(valence_train_data, 100)
 
     output_vanilla('arousal_vanillamodel.txt', arousal_vanilla_dict, arousal_vanilla_bias)
-    output_average('arousal_averagedmodel.txt', arousal_vanilla_dict, arousal_average_bias, arousal_vanilla_dict, arousal_vanilla_bias, 100 * 2 * len(arousal_train_data[0]))
+    output_average('arousal_averagedmodel.txt', arousal_average_dict, arousal_average_bias, arousal_vanilla_dict, arousal_vanilla_bias, 100 * 2 * len(arousal_train_data[0]))
     output_vanilla('valence_vanillamodel.txt', valence_vanilla_dict, valence_vanilla_bias)
-    output_average('valence_averagedmodel.txt', valence_vanilla_dict, valence_average_bias, valence_vanilla_dict, valence_vanilla_bias, 100 * 2 * len(valence_train_data[0]))
+    output_average('valence_averagedmodel.txt', valence_average_dict, valence_average_bias, valence_vanilla_dict, valence_vanilla_bias, 100 * 2 * len(valence_train_data[0]))
+
+    arousal_vanilla_dict, arousal_vanilla_bias = input_perceptron('arousal_vanillamodel.txt')
+    arousal_average_dict, arousal_average_bias = input_perceptron('arousal_averagedmodel.txt')
+    valence_vanilla_dict, valence_vanilla_bias = input_perceptron('valence_vanillamodel.txt')
+    valence_average_dict, valence_average_bias = input_perceptron('valence_averagedmodel.txt')
+
+    test_file_path = '../train/MoodyLyrics/ml_balanced.csv'
+    test_dir_path = '../train/words'
+    output_file_path = 'percepoutput'
+    test_perceptron_arousal(test_file_path, test_dir_path, arousal_vanilla_dict, arousal_vanilla_bias,
+                            output_file_path + '_arousal' + '_vanialla' + '.csv')
+    test_perceptron_arousal(test_file_path, test_dir_path, arousal_average_dict, arousal_average_bias,
+                            output_file_path + '_arousal' + '_average' + '.csv')
+    test_perceptron_valence(test_file_path, test_dir_path, valence_vanilla_dict, valence_vanilla_bias,
+                            output_file_path + '_valence' + '_vanialla' + '.csv')
+    test_perceptron_valence(test_file_path, test_dir_path, valence_average_dict, valence_average_bias,
+                            output_file_path + '_valence' + '_average' + '.csv')
+    calc_f1score(output_file_path, '_arousal' + '_vanialla', '.csv')
+    calc_f1score(output_file_path, '_arousal' + '_average', '.csv')
+    calc_f1score(output_file_path, '_valence' + '_vanialla', '.csv')
+    calc_f1score(output_file_path, '_valence' + '_average', '.csv')

@@ -60,6 +60,7 @@ def get_statistic_result(input_file_path, tagging_file_dir, output_file_path):
         for record in spamreader:
             if cnt > 0:
                 tagging_file_path = tagging_file_dir + record[0] + '.csv'
+                mood = record[3]
                 with open(tagging_file_path, 'r', encoding='utf-8') as tagging_file:
                     another_cnt = 0
                     for line in tagging_file:
@@ -69,17 +70,23 @@ def get_statistic_result(input_file_path, tagging_file_dir, output_file_path):
                                 word_dict[tokens[0]] = {}
                             if tokens[1] not in word_dict[tokens[0]]:
                                 word_dict[tokens[0]][tokens[1]] = {}
-                            word_dict[tokens[0]][tokens[1]][tokens[2]] = word_dict[tokens[0]][tokens[1]].get(tokens[2], 0) + 1
+                            if tokens[2] not in word_dict[tokens[0]][tokens[1]]:
+                                word_dict[tokens[0]][tokens[1]][tokens[2]] = {}
+                            word_dict[tokens[0]][tokens[1]][tokens[2]][mood] = word_dict[tokens[0]][tokens[1]][tokens[2]].get(mood, 0) + 1
                         another_cnt += 1
                 print(cnt)
             cnt += 1
+
     with open(output_file_path, 'w', encoding='utf-8') as output_file:
-        output_file.write('Word,Method,Pos,Count\n')
+        output_file.write('Word,Method,Pos,Happy,Angry,Sad,Relaxed\n')
+        moods = ['happy', 'angry', 'sad', 'relaxed']
         for lemma in word_dict:
             for method in word_dict[lemma]:
                 for token in word_dict[lemma][method]:
-                    output_file.write(
-                        lemma + ',' + method + ',' + token + ',' + str(word_dict[lemma][method][token]) + '\n')
+                    output_file.write(lemma + ',' + method + ',' + token)
+                    for mood in moods:
+                         output_file.write(',' + str(word_dict[lemma][method][token].get(mood, 0)))
+                    output_file.write('\n')
 
 if __name__ == '__main__':
     # stanza.download('en')

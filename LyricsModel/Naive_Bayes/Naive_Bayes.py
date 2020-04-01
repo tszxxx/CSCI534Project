@@ -70,7 +70,7 @@ def output_naive_bayes_model(nbmodel_file_path, words_dict):
 
 def test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, nboutput_file_path, words_option = 0, use_correct=False):
     words_dict = {}
-    spller = autocorrect.Speller(lang='en')
+    speller = autocorrect.Speller(lang='en')
     total_lines = 0
     with open(links_file_path, 'r', newline='', encoding='utf-8') as links_file:
         total_lines = len(links_file.readlines()) - 1
@@ -112,7 +112,7 @@ def test_naive_bayes_model(links_file_path, words_dir_path, nbmodel_file_path, n
                             for token in tokens:
                                 token = token.translate(table).lower().strip()
                                 if use_correct:
-                                    token = spller(token)
+                                    token = speller(token)
                                 if len(token) > 0 and token in words_dict:
                                     if token not in existing_words:
                                         total = sum(words_dict[token].values())

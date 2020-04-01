@@ -5,20 +5,20 @@ import os
 import re
 import string
 
-def create_dataset(input_file_path, train_data_dir, output_file_dir):
+def create_dataset(input_file_path, train_data_dir, output_file_dir, nlp):
     # lemma, upos, xpos
     if not os.path.exists(output_file_dir):
         os.mkdir(output_file_dir)
     output_file_dir += '/'
     train_data_dir += '/'
-    table = str.maketrans('','',string.punctuation)
+    table = str.maketrans('', '', string.punctuation)
     with open(input_file_path, 'r', encoding='utf-8') as input_file:
         spamreader = csv.reader(input_file, delimiter=',', quotechar='\"')
         cnt = 0
-        word_dict = {}
         for record in spamreader:
             if cnt > 0:
                 train_file_path = train_data_dir + record[0] + '.txt'
+                word_dict = {}
                 encoding = None
                 with open(train_file_path, 'rb') as input_file:
                     data = input_file.read()
@@ -94,8 +94,8 @@ if __name__ == '__main__':
     input_file_path = '../train/MoodyLyrics/ml_balanced.csv'
     train_data_dir = '../train/lyrics'
     output_file_dir = '../train/tagging'
-    if not os.path.exists(output_file_dir):
-        create_dataset(input_file_path, train_data_dir, output_file_dir)
+    if True or not os.path.exists(output_file_dir):
+        create_dataset(input_file_path, train_data_dir, output_file_dir, nlp)
     output_file_path = 'overall.csv'
-    if not os.path.exists(output_file_path):
+    if True or not os.path.exists(output_file_path):
         get_statistic_result(input_file_path, output_file_dir, output_file_path)

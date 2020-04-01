@@ -68,9 +68,10 @@ def replace_word(input_file_dir, input_file_path, model_file_path, output_file_d
 
 if __name__ == '__main__':
     input_file_dir = len(sys.argv) > 1 is not None and sys.argv[1] or 'input'
-    input_file_path = len(sys.argv) > 2 is not None and sys.argv[2] or 'ML1.txt'
-    model_file_path = len(sys.argv) > 3 is not None and sys.argv[3] or 'overall.csv'
-    output_file_dir = len(sys.argv) > 4 is not None and sys.argv[4] or 'output'
-    expected_label = len(sys.argv) > 5 is not None and sys.argv[5] or 'angry'
-    replace_word(input_file_dir, input_file_path, model_file_path, output_file_dir, expected_label, threshold=10)
+    model_file_path = len(sys.argv) > 2 is not None and sys.argv[2] or 'overall.csv'
+    output_file_dir = len(sys.argv) > 3 is not None and sys.argv[3] or 'output'
+    expected_label = len(sys.argv) > 4 is not None and sys.argv[4] or 'angry'
+    for root, dirs, files in os.walk(input_file_dir):
+        for input_file_path in files:
+            replace_word(input_file_dir, input_file_path, model_file_path, output_file_dir, expected_label, threshold=10)
     print('has changed about', changed_words, 'words')

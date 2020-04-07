@@ -13,7 +13,7 @@ def find_replace_word(lemma, upos, xpos, model_dict, expected_label):
     if upos in model_dict['upos'] and lemma in model_dict['upos'][upos] and model_dict['upos'][upos][lemma] == expected_label:
         return lemma
     if upos in ['NOUN', 'VERB', 'ADJ', 'ADV']:
-        keys =  list(model_dict['upos'][upos].keys())      # Python 3; use keys = d.keys() in Python 2
+        keys = list(model_dict['upos'][upos].keys())
         random.shuffle(keys)
         for word in keys:
             if model_dict['upos'][upos][word] == expected_label:
@@ -25,7 +25,7 @@ def find_replace_word(lemma, upos, xpos, model_dict, expected_label):
 def replace_word(input_file_dir, input_file_path, model_file_path, output_file_dir, expected_label, threshold=100):
     nlp = stanza.Pipeline(processors='tokenize,lemma,mwt,pos')
     encoding = ''
-    table = str.maketrans('','',string.punctuation)
+    table = str.maketrans('', '', string.punctuation)
     model_dict = {}
     with open(model_file_path, 'r', encoding='utf-8') as model_file:
         cnt = 0

@@ -3,10 +3,9 @@ import autocorrect
 import string
 import math
 
-def test_naive_bayes_model(input_file_path, nbmodel_file_path, output_file_path):
+def get_naive_bayes_model(nbmodel_file_path):
     words_dict = {}
     # speller = autocorrect.Speller(lang='en')
-    table = str.maketrans('', '', string.punctuation)
 
     with open(nbmodel_file_path, 'r') as nbmodel_file:
         cnt = 0
@@ -20,7 +19,10 @@ def test_naive_bayes_model(input_file_path, nbmodel_file_path, output_file_path)
             else:
                 moods = line.split(',')[1:]
                 cnt += 1
+    return words_dict
 
+def test_naive_bayes_model(input_file_path, words_dict):
+    table = str.maketrans('', '', string.punctuation)
     with open(input_file_path, 'r') as input_file:
         possibility_dict = {
             'relaxed': 0,
@@ -36,16 +38,22 @@ def test_naive_bayes_model(input_file_path, nbmodel_file_path, output_file_path)
                     total = sum(words_dict[token].values())
                     for mood in words_dict[token]:
                         possibility_dict[mood] += math.log2(words_dict[token][mood] / total)
-    with open(output_file_path, 'w') as output_file:
-        output_file.write(max(possibility_dict, key=possibility_dict.get))
+
+    return max(possibility_dict, key=possibility_dict.get)
 
 
 if __name__ == '__main__':
     nbmodel_file_path = 'nbmodel.csv'
-    file_path = 'ML1.txt'
-    input_file_path = '../Syntax_Analysis/output/' + file_path
-    if not os.path.exists('../Syntax_Analysis/test'):
-        os.mkdir('../Syntax_Analysis/test')
-        print()
-    output_file_path = '../Syntax_Analysis/test/' + file_path
-    test_naive_bayes_model(input_file_path, nbmodel_file_path, output_file_path)
+    word_dict = get_naive_bayes_model(nbmodel_file_path)
+    main_dirs = ['../Syntax_Analysis', '../WordEmbedding']
+    for main_dir in main_dirs:
+        input_dir = main_dir + '/output/'
+        output_dir = main_dir + '/test'
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        output_file_path = output_dir + '/output.csv'
+        with open(output_file_path, 'w') as output_file:
+            output_file.write('filename,mood\n')
+            for root, dirs, files in os.walk(input_dir):
+                for file in files:
+                    output_file.write(file + ',' + test_naive_bayes_model(os.path.join(root, file), word_dict) + '\n')

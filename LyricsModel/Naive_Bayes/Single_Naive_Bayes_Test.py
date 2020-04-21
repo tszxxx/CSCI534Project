@@ -45,15 +45,19 @@ def test_naive_bayes_model(input_file_path, words_dict):
 if __name__ == '__main__':
     nbmodel_file_path = 'nbmodel.csv'
     word_dict = get_naive_bayes_model(nbmodel_file_path)
-    main_dirs = ['../Syntax_Analysis', '../WordEmbedding']
-    for main_dir in main_dirs:
-        input_dir = main_dir + '/output/'
-        output_dir = main_dir + '/test'
-        if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
-        output_file_path = output_dir + '/output.csv'
-        with open(output_file_path, 'w') as output_file:
-            output_file.write('filename,mood\n')
-            for root, dirs, files in os.walk(input_dir):
-                for file in files:
-                    output_file.write(file + ',' + test_naive_bayes_model(os.path.join(root, file), word_dict) + '\n')
+    input_file_path = '../Modify_Test/input.csv'
+    output_file_dir = '../Modify_Test/output/'
+    output_file_path = '../Modify_Test/output.csv'
+    algorithms = ['syntax', 'WordEmbedding']
+    cnt = 0
+    with open(output_file_path, 'w') as output_file:
+        output_file.write('file path,expected mood,result mood\n')
+        with open(input_file_path, 'r', encoding='utf-8') as input_file:
+            for line in input_file:
+                if cnt > 0:
+                    record = line.strip().split(',')
+                    name, path, source_mood, target_mood = record[0], record[1], record[2], record[3]
+                    for algorithm in algorithms:
+                        test_file_path = output_file_dir + algorithm + '_' + name
+                        output_file.write(test_file_path + ',' + target_mood + ',' + test_naive_bayes_model(test_file_path, word_dict) + '\n')
+                cnt += 1

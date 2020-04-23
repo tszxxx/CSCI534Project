@@ -12,7 +12,7 @@
 *.DS_Store
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
-ImageModel/hsv
+WordEmbedding/model
 
 # Build results
 [Dd]ebug/

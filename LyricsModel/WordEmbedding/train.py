@@ -2,10 +2,13 @@ import os
 from gensim.models import Word2Vec, KeyedVectors
 import csv
 import chardet
+import string
+import re
 
 def get_model(balance_file_path, input_file_dir, model_file_dir):
     arr = []
     input_file_dir += '/'
+    table = str.maketrans('', '', string.punctuation)
     with open(balance_file_path, 'r', encoding='utf-8') as balance_file:
         cnt = 0
         spamreader = csv.reader(balance_file, delimiter=',', quotechar='\"')
@@ -16,10 +19,16 @@ def get_model(balance_file_path, input_file_dir, model_file_dir):
                 with open(file_path, 'rb') as file:
                     data = file.read()
                     encoding = chardet.detect(data)
+                tokens = []
                 with open(file_path, 'r', encoding=encoding['encoding']) as file:
-                    tokens = file.read().replace("\n", " ").split(" ")
+                    for line in file:
+                        line = re.sub(r'\([^\)]*\)', '', line)
+                        line = re.sub(r'\[[^\]]*\]', '', line)
+                        line = line.translate(table).strip()
+                        if len(line) > 0:
+                            tokens.append(line.split(' '))
                 tokens.append(record[-1])
-                arr.append(tokens)
+                arr.extend(tokens)
                 print(cnt)
             cnt += 1
     model_file_dir += '/'
@@ -29,9 +38,10 @@ def get_model(balance_file_path, input_file_dir, model_file_dir):
         model.wv.save(model_file_path)
         del model
 
+
 if __name__ == '__main__':
     balance_file_path = '../train/MoodyLyrics/ml_balanced.csv'
-    input_file_dir = '../train/words'
+    input_file_dir = '../train/lyrics'
     model_file_dir = 'model'
     if not os.path.exists(model_file_dir):
         os.mkdir(model_file_dir)

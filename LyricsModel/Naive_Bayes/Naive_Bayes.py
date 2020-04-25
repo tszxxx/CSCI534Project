@@ -142,6 +142,7 @@ def calc_accuracy(nboutput_file_path):
                     }
                 f1_dict[tokens[1].strip()][tokens[2].strip()] += 1
             cnt += 1
+        print('label', 'precision', 'recall', 'f1-score',sep='\t')
         for certain_mood in ['relaxed', 'angry', 'happy', 'sad']:
             true_positive = 0
             false_positive = 0
@@ -162,19 +163,19 @@ def calc_accuracy(nboutput_file_path):
                             false_positive += f1_dict[actual_mood][predicted_mood]
             precision = true_positive / (true_positive + false_positive)
             recall = true_positive / (true_positive + false_negative)
-            print(certain_mood, precision, recall, 2 * precision * recall / (precision + recall))
+            print(certain_mood, '%.2f' % precision, '%.2f' % recall, '%.2f' % (2 * precision * recall / (precision + recall)), sep='\t')
 
 if __name__ == '__main__':
     nbmodel_file_path = 'nbmodel.csv'
     train_file_path = '../train/MoodyLyrics/ml_balanced.csv'
     train_words_dir_path = '../train/words'
-    if True or not os.path.exists(nbmodel_file_path):
+    if not os.path.exists(nbmodel_file_path):
         words_dict = train_naive_bayes_model(train_file_path, train_words_dir_path, words_option=0)
         smooth_naive_bayes_model(words_dict)
         output_naive_bayes_model(nbmodel_file_path, words_dict)
     nboutput_file_path = 'nboutput.csv'
     test_file_path = train_file_path # '../test/balanced.csv'
     test_words_dir_path = train_words_dir_path # '../test/words'
-    if True or not os.path.exists(nboutput_file_path):
+    if not os.path.exists(nboutput_file_path):
         test_naive_bayes_model(test_file_path, test_words_dir_path, nbmodel_file_path, nboutput_file_path, words_option=0)
     calc_accuracy(nboutput_file_path)

@@ -1,1 +1,75 @@
-bird bird bird , b-bird 's the word a - well - a bird bird bird , bird be the word a - well - a bird bird bird , well - a bird be the word a - well - a bird bird bird , b-bird 's the word a - well - a bird bird bird , well - a bird be the word a - well - a bird , bird , b-bird 's the word a - well - a bird bird bird , b-bird 's the word a - well - a bird bird bird , well - a bird be the word a - well - a bird , bird , b-bird 's the word a - well - a do not you know , about the bird ? well , everybody know that the bird be the word ! a - well - a bird , bird , b-bird 's the bird a - well - a a - well - a everybody 's hear , about the bird ! bird bird bird , b-bird 's the word a - well - a bird bird bird , b-bird 's the word a - well - a bird bird bird , b-bird 's the word a - well - a bird , bird , b-bird 's the word a - well - a bird bird bird , b-bird 's the word a - well - a bird bird bird , b-bird 's the word a - well - a bird bird bird , b-bird 's the word a - well - a bird bird bird , b-bird 's the word a - well - a do not you know , about the bird ? well ! everybody 's talk about the bird ! a - well - a bird , bird , b-bird 's the bird a - well - a bird ! surfin ' bird Pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa oom m-mow mow Pa pa oom mow m-mow Pa pa pa oom m-mow mow Pa pa oom mow m-mow Pa pa oom m-mow mow Pa pa oom mow m-mow oom m-mow mow Pa pa oom mow m-mow Pa pa oom m-mow mow Pa pa oom mow m-mow Pa pa oom m-mow mow Pa pa oom mow m-mow oom m-oom m-oom m-oom M-oom m-mow mow Pa pa oom mow m-mow Pa pa oom m-oom m-oom m-oom M-oom m-mow mow Pa pa oom mow m-mow oom m-mow mow Pa pa oom mow m-mow Pa pa oom m-mow mow Pa pa oom mow m-mow Pa pa oom m-mow mow oom mow m-mow Pa pa oom m-mow mow oom mow m-mow Pa pa oom m-oom m-oom m-oom M-oom m-mow mow oom m-oom m-oom m-oom M-oom m-mow mow oom mow m-mow Pa pa oom mow m-mow Pa pa oom m-mow mow oom mow m-mow well - a do not you know , about the bird ? well ! everybody know that the bird be the word ! a - well - a bird , bird , b-bird 's the bird a - well - a oom m-mow mow Pa pa oom mow m-mow Ba pa oom m-mow mow oom mow m-mow Pa pa oom m-mow mow oom mow m-mow Pa pa oom m-mow mow min_words_error : " max_words_error : " Cheeeek 
+bird bird bird b-bird be the word 
+a well a bird bird bird bird be the word 
+a well a bird bird bird well a bird be the word 
+a well a bird bird bird b-bird be the word 
+a well a bird bird bird well a bird be the word 
+a well a bird bird b-bird be the word 
+a well a bird bird bird b-bird be the word 
+a well a bird bird bird well a bird be the word 
+a well a bird bird b-bird be the word 
+a well a do not you know about the bird 
+well everybody know that the bird be the word 
+a well a bird bird b-bird be the bird 
+a well a 
+a well a everybody be hear about the bird 
+bird bird bird b-bird be the word 
+a well a bird bird bird b-bird be the word 
+a well a bird bird bird b-bird be the word 
+a well a bird bird b-bird be the word 
+a well a bird bird bird b-bird be the word 
+a well a bird bird bird b-bird be the word 
+a well a bird bird bird b-bird be the word 
+a well a bird bird bird b-bird be the word 
+a well a do not you know about the bird 
+well everybody be talk about the bird 
+a well a bird bird b-bird be the bird 
+a well a bird 
+Surfin bird 
+Pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa pa 
+Oom m-mow mow 
+Pa pa oom mow m-mow 
+Pa pa pa oom m-mow mow 
+Pa pa oom mow m-mow 
+Pa pa oom m-mow mow 
+Pa pa oom mow m-mow 
+Oom m-mow mow 
+Pa pa oom mow m-mow 
+Pa pa oom m-mow mow 
+Pa pa oom mow m-mow 
+Pa pa oom m-mow mow 
+Pa pa oom mow m-mow 
+oom m-oom m-oom m-oom 
+m oom m-mow mow 
+Pa pa oom mow m-mow 
+Pa pa oom m-oom m-oom m-oom 
+m oom m-mow mow 
+Pa pa oom mow m-mow 
+Oom m-mow mow 
+Pa pa oom mow m-mow 
+Pa pa oom m-mow mow 
+Pa pa oom mow m-mow 
+Pa pa oom m-mow mow 
+oom mow m-mow 
+Pa pa oom m-mow mow 
+oom mow m-mow 
+Pa pa oom m-oom m-oom m-oom 
+m oom m-mow mow 
+oom m-oom m-oom m-oom 
+m oom m-mow mow 
+oom mow m-mow 
+Pa pa oom mow m-mow 
+Pa pa oom m-mow mow 
+oom mow m-mow 
+well a do not you know about the bird 
+well everybody know that the bird be the word 
+a well a bird bird b-bird be the bird 
+a well a oom m-mow mow 
+Pa pa oom mow m-mow 
+ba pa oom m-mow mow 
+oom mow m-mow 
+Pa pa oom m-mow mow 
+oom mow m-mow 
+Pa pa oom m-mow mow 
+min_words_error 
+max_words_error 
+Cheeeek 

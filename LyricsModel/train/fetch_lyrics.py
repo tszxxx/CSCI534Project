@@ -6,7 +6,7 @@ from html.parser import HTMLParser
 import html
 import string
 import csv
-import stanfordnlp
+import stanza
 import chardet
 
 table = str.maketrans('','',string.punctuation)
@@ -335,14 +335,15 @@ def get_lyrics(links_file_path, output_dir_path, debug_mode = 0):
             cnt += 1
     print('\n----now fetch lyrics from lyrics over----')
 
-def get_words_split(links_file_path, lyrics_dir_path, words_dir_path, debug_mode=3000):
+def get_words_split(links_file_path, lyrics_dir_path, words_dir_path, debug_mode_low=0, debug_mode_high=3000):
     if not os.path.exists(words_dir_path):
         os.mkdir(words_dir_path)
     lyrics_dir_path += '/'
     words_dir_path += '/'
-    nlp = stanfordnlp.Pipeline(processors='tokenize,lemma', models_dir='/Users/hangjiezheng/Desktop/CSCI534/')
+    nlp = stanza.Pipeline(processors='tokenize,lemma,pos')
     cnt = 0
     total_lines = 0
+    table = str.maketrans('', '', string.punctuation)
     with open(links_file_path, 'r', newline='', encoding='utf-8') as links_file:
         total_lines = len(links_file.readlines()) - 1
     with open(links_file_path, 'r', newline='', encoding='utf-8') as links_file:
@@ -350,7 +351,7 @@ def get_words_split(links_file_path, lyrics_dir_path, words_dir_path, debug_mode
             cnt = 0
             spamreader = csv.reader(input_file, delimiter=',', quotechar='\"')
             for record in spamreader:
-                if cnt > 0 and cnt < debug_mode:
+                if cnt > debug_mode_low and cnt < debug_mode_high:
                     input_file_path = lyrics_dir_path + record[0] + '.txt'
                     output_file_path = words_dir_path + record[0] + '.txt'
                     encoding = ''
@@ -369,9 +370,13 @@ def get_words_split(links_file_path, lyrics_dir_path, words_dir_path, debug_mode
                                         words = nlp(line)
                                         for sent in words.sentences:
                                             for word in sent.words:
-                                                output_file.write(word.lemma + ' ')
+                                                lemma = word.lemma.translate(table)
+                                                if len(lemma) > 0:
+                                                    output_file.write(word.lemma + ' ')
+                                        output_file.write('\n')
                         except BaseException as e:
                             os.remove(output_file_path)
+                            print("remove", record[0])
                     print(cnt, '/', total_lines, end='\n')
                 cnt += 1
 
@@ -384,5 +389,5 @@ if __name__ == '__main__':
     if not os.path.exists(lyrics_dir_path):
         get_lyrics(links_file_path, lyrics_dir_path, 0)
     words_dir_path = 'words'
-    if not os.path.exists(words_dir_path):
+    if True or not os.path.exists(words_dir_path):
         get_words_split(links_file_path, lyrics_dir_path, words_dir_path)

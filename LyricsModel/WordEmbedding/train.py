@@ -3,7 +3,6 @@ from gensim.models import Word2Vec, KeyedVectors
 import csv
 import chardet
 import string
-import re
 
 def get_model(balance_file_path, input_file_dir, model_file_dir):
     arr = []
@@ -19,15 +18,12 @@ def get_model(balance_file_path, input_file_dir, model_file_dir):
                 with open(file_path, 'rb') as file:
                     data = file.read()
                     encoding = chardet.detect(data)
-                tokens = []
+                tokens = [record[3]]
                 with open(file_path, 'r', encoding=encoding['encoding']) as file:
                     for line in file:
-                        line = re.sub(r'\([^\)]*\)', '', line)
-                        line = re.sub(r'\[[^\]]*\]', '', line)
-                        line = line.translate(table).strip()
-                        if len(line) > 0:
-                            tokens.append(line.split(' '))
-                tokens.append(record[-1])
+                        tokens_ = line.split(' ')
+                        tokens_.append(record[-1])
+                        tokens.append(tokens_)
                 arr.extend(tokens)
                 print(cnt)
             cnt += 1
@@ -41,7 +37,7 @@ def get_model(balance_file_path, input_file_dir, model_file_dir):
 
 if __name__ == '__main__':
     balance_file_path = '../train/MoodyLyrics/ml_balanced.csv'
-    input_file_dir = '../train/lyrics'
+    input_file_dir = '../train/words'
     model_file_dir = 'model'
     if not os.path.exists(model_file_dir):
         os.mkdir(model_file_dir)

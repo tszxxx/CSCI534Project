@@ -126,7 +126,7 @@ def build_train_data(train_dir='train/'):
                 mood_list.append(file.split('_')[0])
     build_data_from_lists(file_list, file_path_list, mood_list, train_dir)
 
-def build_test_data(test_dir='test'):
+def build_test_data(test_dir='test/'):
     input_dir_path = '/Users/hangjiezheng/Downloads/testImages_abstract/'
     input_file_name = 'ABSTRACT_groundTruth.csv'
     file_list, file_path_list, mood_list = [], [], []
@@ -250,8 +250,8 @@ def get_other_features_by_files_test():
                 cnt += 1
 
 if __name__ == '__main__':
-    #build_train_data()
-    #build_test_data()
+    build_train_data()
+    build_test_data()
     #get_other_features_by_files_train()
     #get_other_features_by_files_test()
     train_several_model('train/', 'test/')

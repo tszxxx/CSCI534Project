@@ -11,10 +11,6 @@ mind,upos,NOUN,5
 mind,xpos,NN,5
 yea,upos,INTJ,1
 yea,xpos,UH,1
-verse,upos,NOUN,3
-verse,xpos,NN,3
-1,upos,NUM,1
-1,xpos,CD,1
 I,upos,PRON,5
 I,xpos,PRP,5
 be,upos,AUX,5
@@ -57,16 +53,12 @@ live,upos,VERB,1
 live,xpos,VB,1
 without,upos,ADP,1
 without,xpos,IN,1
-Chorus,upos,PROPN,2
-Chorus,xpos,NNP,2
 always,upos,ADV,3
 always,xpos,RB,3
 on,upos,ADP,4
 on,xpos,IN,4
 your,upos,AUX,1
 your,xpos,VBZ,1
-2,upos,NUM,1
-2,xpos,CD,1
 give,upos,VERB,1
 give,xpos,VBP,1
 all,upos,DET,1
@@ -109,10 +101,6 @@ see,upos,VERB,3
 see,xpos,VB,3
 again,upos,ADV,1
 again,xpos,RB,1
-repeat,upos,VERB,2
-repeat,xpos,VB,2
-3,upos,NUM,1
-3,xpos,CD,1
 if,upos,SCONJ,1
 if,xpos,IN,1
 do,upos,AUX,2
@@ -155,5 +143,3 @@ one,upos,NOUN,1
 one,xpos,NN,1
 else,upos,ADJ,1
 else,xpos,JJ,1
-chorus,upos,NOUN,1
-chorus,xpos,NN,1

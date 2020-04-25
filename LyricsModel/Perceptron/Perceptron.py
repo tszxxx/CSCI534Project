@@ -210,9 +210,9 @@ def calc_f1score(input_file_path_prefix, mid, postfix):
     precision = true_positive / (true_positive + false_positive)
     recall = true_positive / (true_positive + false_negative)
     print('for' + mid.replace('_', ' '), ':')
-    print('\tprecison:\t', precision)
-    print('\trecall:\t', recall)
-    print('\tf1_score:\t', 2 * precision * recall / (precision + recall))
+    print('\tprecision:\t%.2f' % precision)
+    print('\trecall:\t%.2f' % recall)
+    print('\tf1_score:\t%.2f' % (2 * precision * recall / (precision + recall)))
  
 def input_perceptron(perceptron_model_path):
     with open(perceptron_model_path, 'r', encoding='utf-8') as input_file:
@@ -245,8 +245,8 @@ if __name__ == '__main__':
     valence_vanilla_dict, valence_vanilla_bias = input_perceptron('valence_vanillamodel.txt')
     valence_average_dict, valence_average_bias = input_perceptron('valence_averagedmodel.txt')
 
-    test_file_path = '../test/balanced.csv'
-    test_dir_path = '../test/words'
+    test_file_path = train_balanced_file_path # '../test/balanced.csv'
+    test_dir_path = train_dir_path # '../test/words'
     output_file_path = 'percepoutput'
     test_perceptron_arousal(test_file_path, test_dir_path, arousal_vanilla_dict, arousal_vanilla_bias,
                             output_file_path + '_arousal' + '_vanialla' + '.csv')

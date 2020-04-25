@@ -1,1 +1,3 @@
 file path,expected mood,result mood
+../Modify_Test/output/syntax_ML1.txt,happy,happy
+../Modify_Test/output/WordEmbedding_ML1.txt,happy,happy

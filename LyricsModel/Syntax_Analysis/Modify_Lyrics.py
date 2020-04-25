@@ -58,7 +58,7 @@ def replace_word(input_file_path, model_dict, output_file_path, expected_label, 
                             output_file.write(
                                 find_replace_word(word.lemma, word.upos, word.xpos, model_dict,
                                                   expected_label) + ' ')
-                output_file.write('\n')
+                    output_file.write('\n')
 
 def replace_word_by_csv(input_file_path, model_dict, output_file_dir):
     table = str.maketrans('', '', string.punctuation)

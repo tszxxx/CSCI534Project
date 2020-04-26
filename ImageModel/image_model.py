@@ -177,6 +177,11 @@ def train_several_model(train_file_dir, test_file_dir):
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.svm import SVC
     from sklearn.preprocessing import StandardScaler
+    from sklearn import datasets
+    from sklearn.multiclass import OneVsRestClassifier
+    from sklearn.svm import LinearSVC
+    from sklearn.naive_bayes import GaussianNB
+    from sklearn.linear_model import Perceptron
     import warnings
     global label_list
     label_dict = {}
@@ -194,21 +199,29 @@ def train_several_model(train_file_dir, test_file_dir):
     test_x, test_y = transform_data_from_file(label_dict, test_file_dir)
     scaler.fit(test_x)
     test_x = scaler.transform(test_x)
+    perceptron = OneVsRestClassifier(Perceptron(tol=1e-3, random_state=0)).fit(train_x, train_y)
+    print('%.2f, %.2f' % (perceptron.score(train_x, train_y), perceptron.score(test_x, test_y)))
+
+    gnb = OneVsRestClassifier(GaussianNB()).fit(train_x, train_y)
+    print('%.2f, %.2f' % (gnb.score(train_x, train_y), gnb.score(test_x, test_y)))
+
+    linear_SVC = OneVsRestClassifier(LinearSVC(random_state=0)).fit(train_x, train_y)
+    print('%.2f, %.2f' % (linear_SVC.score(train_x, train_y), linear_SVC.score(test_x, test_y)))
 
     linear_reg = LinearRegression().fit(train_x, train_y)
-    print(linear_reg.score(train_x, train_y), linear_reg.score(test_x, test_y))
+    print('%.2f, %.2f' % (linear_reg.score(train_x, train_y), linear_reg.score(test_x, test_y)))
 
     logistic_reg = LogisticRegression(random_state=0).fit(train_x, train_y)
-    print(logistic_reg.score(train_x, train_y), logistic_reg.score(test_x, test_y))
+    print('%.2f, %.2f' % (logistic_reg.score(train_x, train_y), logistic_reg.score(test_x, test_y)))
 
     ranFor = RandomForestClassifier(max_depth=2, random_state=0).fit(train_x, train_y)
-    print(ranFor.score(train_x, train_y), ranFor.score(test_x, test_y))
+    print('%.2f, %.2f' % (ranFor.score(train_x, train_y), ranFor.score(test_x, test_y)))
 
     svc = SVC(gamma='auto').fit(train_x, train_y)
-    print(svc.score(train_x, train_y), svc.score(test_x, test_y))
+    print('%.2f, %.2f' % (svc.score(train_x, train_y), svc.score(test_x, test_y)))
 
     neigh = KNeighborsClassifier(n_neighbors=3).fit(train_x, train_y)
-    print(neigh.score(train_x, train_y), neigh.score(test_x, test_y))
+    print('%.2f, %.2f' % (neigh.score(train_x, train_y), neigh.score(test_x, test_y)))
 
 def get_other_features_by_files_train():
     train_dir = 'train/'
@@ -250,8 +263,8 @@ def get_other_features_by_files_test():
                 cnt += 1
 
 if __name__ == '__main__':
-    build_train_data()
-    build_test_data()
+    #build_train_data()
+    #build_test_data()
     #get_other_features_by_files_train()
     #get_other_features_by_files_test()
     train_several_model('train/', 'test/')

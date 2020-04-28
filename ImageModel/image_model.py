@@ -6,7 +6,17 @@ import csv
 from skimage.feature import greycomatrix, greycoprops
 from ThirdParty import tamura_numpy
 
-label_list = ['Amusement', 'Anger', 'Awe', 'Content', 'Disgust', 'Excitement', 'Fear', 'Sad']
+label_dict = {
+    'amusement': {'arousal': 'positive', 'valence': 'positive'},
+    'anger': {'arousal': 'positive', 'valence': 'negative'},
+    'awe': {'arousal': 'positive', 'valence': 'negative'},
+    'content': {'arousal': 'negative', 'valence': 'positive'},
+    'contentment': {'arousal': 'negative', 'valence': 'positive'},
+    'disgust': {'arousal': 'positive', 'valence': 'negative'},
+    'excitement': {'arousal': 'positive', 'valence': 'positive'},
+    'fear': {'arousal': 'positive', 'valence': 'negative'},
+    'sad': {'arousal': 'negative', 'valence': 'negative'},
+}
 
 def get_arousal_valence_per_image(bgrImage):
     rgbImage = cv2.cvtColor(bgrImage, cv2.COLOR_BGR2RGB)
@@ -142,13 +152,11 @@ def build_test_data(test_dir='test/'):
             cnt += 1
     build_data_from_lists(file_list, file_path_list, mood_list, test_dir)
 
-def transform_data_from_file(label_dict, input_file_dir):
+def transform_data_from_file(input_file_dir):
+    global label_dict
     files = ['color_features.csv', 'texture_features.csv', 'other_features.csv', 'mood_features.csv']
-    total_lines = 0
-    with open(input_file_dir + files[-1], 'r') as input_file:
-        total_lines = len(input_file.readlines())
     final_input_file = input_file_dir + files.pop()
-    X, y = [], []
+    X, arousal_y, valence_y = [], [], []
     for file in files:
         with open(input_file_dir + file, 'r') as input_file:
             spamreader = csv.reader(input_file, delimiter=',', quotechar='\'')
@@ -166,62 +174,47 @@ def transform_data_from_file(label_dict, input_file_dir):
         cnt = 0
         for records in spamreader:
             if cnt > 0:
-                y.append(label_dict[records[-1].lower()])
+                arousal_y.append(1 if label_dict[records[-1].lower()]['arousal'] == 'positive' else 0)
+                valence_y.append(1 if label_dict[records[-1].lower()]['valence'] == 'positive' else 0)
             cnt += 1
-    return X, y
+    return X, arousal_y, valence_y
 
 def train_several_model(train_file_dir, test_file_dir):
-    from sklearn.linear_model import LinearRegression
-    from sklearn.neighbors import KNeighborsClassifier
     from sklearn.linear_model import LogisticRegression
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.svm import SVC
     from sklearn.preprocessing import StandardScaler
-    from sklearn import datasets
-    from sklearn.multiclass import OneVsRestClassifier
-    from sklearn.svm import LinearSVC
-    from sklearn.naive_bayes import GaussianNB
-    from sklearn.linear_model import Perceptron
+    from sklearn.tree import DecisionTreeClassifier
     import warnings
-    global label_list
-    label_dict = {}
-    for (index, value) in enumerate(label_list):
-        label_dict[value.lower()] = index
-    label_dict['contentment'] = label_dict['content']
     warnings.filterwarnings('ignore')
-
     scaler = StandardScaler()
 
-    train_x, train_y = transform_data_from_file(label_dict, train_file_dir)
+    train_x, train_arousal_y, train_valence_y = transform_data_from_file(train_file_dir)
     scaler.fit(train_x)
     train_x = scaler.transform(train_x)
 
-    test_x, test_y = transform_data_from_file(label_dict, test_file_dir)
+    test_x, test_arousal_y, test_valence_y = transform_data_from_file(test_file_dir)
     scaler.fit(test_x)
     test_x = scaler.transform(test_x)
-    perceptron = OneVsRestClassifier(Perceptron(tol=1e-3, random_state=0)).fit(train_x, train_y)
-    print('%.2f, %.2f' % (perceptron.score(train_x, train_y), perceptron.score(test_x, test_y)))
+    print('method\tdataset\tattribute\tscore')
 
-    gnb = OneVsRestClassifier(GaussianNB()).fit(train_x, train_y)
-    print('%.2f, %.2f' % (gnb.score(train_x, train_y), gnb.score(test_x, test_y)))
+    logistic_reg = LogisticRegression(random_state=0).fit(train_x, train_arousal_y)
+    print('logistic regression\ttrain\tarousal\t%.2f' % logistic_reg.score(train_x, train_arousal_y))
+    print('logistic regression\ttest\tarousal\t%.2f' % logistic_reg.score(test_x, test_arousal_y))
+    del logistic_reg
 
-    linear_SVC = OneVsRestClassifier(LinearSVC(random_state=0)).fit(train_x, train_y)
-    print('%.2f, %.2f' % (linear_SVC.score(train_x, train_y), linear_SVC.score(test_x, test_y)))
+    logistic_reg = LogisticRegression(random_state=0).fit(train_x, train_valence_y)
+    print('logistic regression\ttrain\tvalence\t%.2f' % logistic_reg.score(train_x, train_valence_y))
+    print('logistic regression\ttest\tvalence\t%.2f' % logistic_reg.score(test_x, test_valence_y))
+    del logistic_reg
 
-    linear_reg = LinearRegression().fit(train_x, train_y)
-    print('%.2f, %.2f' % (linear_reg.score(train_x, train_y), linear_reg.score(test_x, test_y)))
+    tree_clf = DecisionTreeClassifier().fit(train_x, train_arousal_y)
+    print('decision tree\ttrain\tarousal\t%.2f' % tree_clf.score(train_x, train_arousal_y))
+    print('decision tree\ttest\tarousal\t%.2f' % tree_clf.score(test_x, test_arousal_y))
+    del tree_clf
 
-    logistic_reg = LogisticRegression(random_state=0).fit(train_x, train_y)
-    print('%.2f, %.2f' % (logistic_reg.score(train_x, train_y), logistic_reg.score(test_x, test_y)))
-
-    ranFor = RandomForestClassifier(max_depth=2, random_state=0).fit(train_x, train_y)
-    print('%.2f, %.2f' % (ranFor.score(train_x, train_y), ranFor.score(test_x, test_y)))
-
-    svc = SVC(gamma='auto').fit(train_x, train_y)
-    print('%.2f, %.2f' % (svc.score(train_x, train_y), svc.score(test_x, test_y)))
-
-    neigh = KNeighborsClassifier(n_neighbors=3).fit(train_x, train_y)
-    print('%.2f, %.2f' % (neigh.score(train_x, train_y), neigh.score(test_x, test_y)))
+    tree_clf = DecisionTreeClassifier().fit(train_x, train_valence_y)
+    print('decision tree\ttrain\tvalence\t%.2f' % tree_clf.score(train_x, train_valence_y))
+    print('decision tree\ttest\tvalence\t%.2f' % tree_clf.score(test_x, test_valence_y))
+    del tree_clf
 
 def get_other_features_by_files_train():
     train_dir = 'train/'

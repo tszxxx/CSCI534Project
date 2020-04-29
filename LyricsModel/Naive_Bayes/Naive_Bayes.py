@@ -174,8 +174,8 @@ if __name__ == '__main__':
         smooth_naive_bayes_model(words_dict)
         output_naive_bayes_model(nbmodel_file_path, words_dict)
     nboutput_file_path = 'nboutput.csv'
-    test_file_path = train_file_path # '../test/balanced.csv'
-    test_words_dir_path = train_words_dir_path # '../test/words'
-    if not os.path.exists(nboutput_file_path):
+    test_file_path = '../test/balanced.csv'
+    test_words_dir_path =  '../test/words'
+    if True or not os.path.exists(nboutput_file_path):
         test_naive_bayes_model(test_file_path, test_words_dir_path, nbmodel_file_path, nboutput_file_path, words_option=0)
     calc_accuracy(nboutput_file_path)

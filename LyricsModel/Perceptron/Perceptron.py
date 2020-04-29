@@ -235,28 +235,28 @@ if __name__ == '__main__':
         valence_vanilla_dict, valence_vanilla_bias, valence_average_dict, valence_average_bias \
             = train_perceptron(valence_train_data, 100)
 
-        output_vanilla('arousal_vanillamodel.txt', arousal_vanilla_dict, arousal_vanilla_bias)
-        output_average('arousal_averagedmodel.txt', arousal_average_dict, arousal_average_bias, arousal_vanilla_dict, arousal_vanilla_bias, 100 * 2 * len(arousal_train_data[0]))
-        output_vanilla('valence_vanillamodel.txt', valence_vanilla_dict, valence_vanilla_bias)
-        output_average('valence_averagedmodel.txt', valence_average_dict, valence_average_bias, valence_vanilla_dict, valence_vanilla_bias, 100 * 2 * len(valence_train_data[0]))
+        output_vanilla('arousal_vanilla_model.txt', arousal_vanilla_dict, arousal_vanilla_bias)
+        output_average('arousal_averaged_model.txt', arousal_average_dict, arousal_average_bias, arousal_vanilla_dict, arousal_vanilla_bias, 100 * 2 * len(arousal_train_data[0]))
+        output_vanilla('valence_vanilla_model.txt', valence_vanilla_dict, valence_vanilla_bias)
+        output_average('valence_averaged_model.txt', valence_average_dict, valence_average_bias, valence_vanilla_dict, valence_vanilla_bias, 100 * 2 * len(valence_train_data[0]))
 
-    arousal_vanilla_dict, arousal_vanilla_bias = input_perceptron('arousal_vanillamodel.txt')
-    arousal_average_dict, arousal_average_bias = input_perceptron('arousal_averagedmodel.txt')
-    valence_vanilla_dict, valence_vanilla_bias = input_perceptron('valence_vanillamodel.txt')
-    valence_average_dict, valence_average_bias = input_perceptron('valence_averagedmodel.txt')
+    arousal_vanilla_dict, arousal_vanilla_bias = input_perceptron('arousal_vanilla_model.txt')
+    arousal_average_dict, arousal_average_bias = input_perceptron('arousal_averaged_model.txt')
+    valence_vanilla_dict, valence_vanilla_bias = input_perceptron('valence_vanilla_model.txt')
+    valence_average_dict, valence_average_bias = input_perceptron('valence_averaged_model.txt')
 
-    test_file_path = train_balanced_file_path # '../test/balanced.csv'
-    test_dir_path = train_dir_path # '../test/words'
+    test_file_path =  '../test/balanced.csv'
+    test_dir_path =  '../test/words'
     output_file_path = 'percepoutput'
     test_perceptron_arousal(test_file_path, test_dir_path, arousal_vanilla_dict, arousal_vanilla_bias,
-                            output_file_path + '_arousal' + '_vanialla' + '.csv')
+                            output_file_path + '_arousal' + '_vanilla' + '.csv')
     test_perceptron_arousal(test_file_path, test_dir_path, arousal_average_dict, arousal_average_bias,
                             output_file_path + '_arousal' + '_average' + '.csv')
     test_perceptron_valence(test_file_path, test_dir_path, valence_vanilla_dict, valence_vanilla_bias,
-                            output_file_path + '_valence' + '_vanialla' + '.csv')
+                            output_file_path + '_valence' + '_vanilla' + '.csv')
     test_perceptron_valence(test_file_path, test_dir_path, valence_average_dict, valence_average_bias,
                             output_file_path + '_valence' + '_average' + '.csv')
-    calc_f1score(output_file_path, '_arousal' + '_vanialla', '.csv')
+    calc_f1score(output_file_path, '_arousal' + '_vanilla', '.csv')
     calc_f1score(output_file_path, '_arousal' + '_average', '.csv')
-    calc_f1score(output_file_path, '_valence' + '_vanialla', '.csv')
+    calc_f1score(output_file_path, '_valence' + '_vanilla', '.csv')
     calc_f1score(output_file_path, '_valence' + '_average', '.csv')

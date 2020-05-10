@@ -17,9 +17,22 @@ label_dict = {
     'fear': {'arousal': 'positive', 'valence': 'negative'},
     'sad': {'arousal': 'negative', 'valence': 'negative'},
 }
+label_list = ['Amusement', 'Anger', 'Awe', 'Content', 'Disgust', 'Excitement', 'Fear', 'Sad']
+color_dict = {
+    'black': [0, 0, 0],
+    'blue': [0, 0, 255],
+    'brown': [165, 42, 42],
+    'green': [0, 255, 0],
+    'gray': [128, 128, 128],
+    'orange': [255, 165, 0],
+    'pink': [255, 192, 203],
+    'purple': [128, 0, 128],
+    'red': [255, 0, 0],
+    'white': [255, 255, 255],
+    'yellow': [255, 255, 0]
+}
 
-def get_arousal_valence_per_image(bgrImage):
-    rgbImage = cv2.cvtColor(bgrImage, cv2.COLOR_BGR2RGB)
+def get_arousal_valence_per_image(rgbImage):
     hsvImage = cv2.cvtColor(rgbImage, cv2.COLOR_RGB2HSV)
     mean_H = np.mean(hsvImage[:][:][0])
     mean_S = np.mean(hsvImage[:][:][1])
@@ -29,41 +42,55 @@ def get_arousal_valence_per_image(bgrImage):
                                  -0.31 * mean_V + 0.60 * mean_S,
                                  0.76 * mean_V + 0.32 * mean_S)
 
-def get_wavelet_per_image(bgrImage):
-    rgbImage = cv2.cvtColor(bgrImage, cv2.COLOR_BGR2RGB)
+def get_wavelet_per_image(rgbImage):
     hsvImage = cv2.cvtColor(rgbImage, cv2.COLOR_RGB2HSV)
     H, S, V = hsvImage[:][:][0], hsvImage[:][:][1], hsvImage[:][:][2]
     coeffs_H = pywt.wavedec2(H, 'db1', level=3)
-    c_H_1, c_H_2, c_H_3 = np.mean(coeffs_H[0]), np.mean(coeffs_H[1]), np.mean(coeffs_H[2])
+    c_H_1, c_H_2, c_H_3 = np.mean(coeffs_H[1]), np.mean(coeffs_H[2]), np.mean(coeffs_H[3])
     Sum_H = c_H_1 + c_H_2 + c_H_3
 
     coeffs_S = pywt.wavedec2(S, 'db1', level=3)
-    c_S_1, c_S_2, c_S_3 = np.mean(coeffs_S[0]), np.mean(coeffs_S[1]), np.mean(coeffs_S[2])
+    c_S_1, c_S_2, c_S_3 = np.mean(coeffs_S[1]), np.mean(coeffs_S[2]), np.mean(coeffs_S[3])
     Sum_S = c_S_1 + c_S_2 + c_S_3
 
     coeffs_V = pywt.wavedec2(V, 'db1', level=3)
-    c_V_1, c_V_2, c_V_3 = np.mean(coeffs_V[0]), np.mean(coeffs_V[1]), np.mean(coeffs_V[2])
+    c_V_1, c_V_2, c_V_3 = np.mean(coeffs_V[1]), np.mean(coeffs_V[2]), np.mean(coeffs_V[3])
     Sum_V = c_V_1 + c_V_2 + c_V_3
     return '%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f' % (c_H_1, c_H_2, c_H_3,
                                                     c_S_1, c_S_2, c_S_3,
                                                     c_V_1, c_V_2, c_V_3,
                                                     Sum_H, Sum_S, Sum_V)
 
+def get_color_name_per_image(rgbImage):
+    global color_dict
+
+    tmp_color_dict = {}
+    tmp_distance_dict = {}
+    for key in color_dict:
+        tmp_color_dict[key] = 0
+    for row in range(rgbImage.shape[0]):
+        for col in range(rgbImage.shape[1]):
+            for key in color_dict:
+                tmp_distance_dict[key] = np.linalg.norm(rgbImage[row][col]-color_dict[key])
+            tmp_color_dict[max(tmp_distance_dict, key=tmp_distance_dict.get)] += 1
+    return ','.join([str(val) for val in tmp_color_dict.values()])
+
 def get_color_features_from_file(input_file_path):
     bgrImage = cv2.imread(input_file_path)
-    return get_arousal_valence_per_image(bgrImage) + ',' + get_wavelet_per_image(bgrImage)
+    rgbImage = cv2.cvtColor(bgrImage, cv2.COLOR_BGR2RGB)
+    return get_arousal_valence_per_image(rgbImage) + ',' + get_wavelet_per_image(rgbImage) + ',' + get_color_name_per_image(rgbImage)
 
 def get_texture_features_per_image(greyImage):
     g = greycomatrix(greyImage, [1, 2], [0, np.pi/2])
     contrast = greycoprops(g, 'contrast').ravel()
     dissimilarity = greycoprops(g, 'dissimilarity').ravel()
     homogeneity = greycoprops(g, 'homogeneity').ravel()
-    ASM = greycoprops(g, 'ASM').ravel()
+    energy = greycoprops(g, 'energy').ravel()
     correlation = greycoprops(g, 'correlation').ravel()
     return ','.join([str(val) for val in contrast]) + ',' + \
            ','.join([str(val) for val in dissimilarity]) + ',' + \
            ','.join([str(val) for val in homogeneity]) + ',' + \
-           ','.join([str(val) for val in ASM]) + ',' + \
+           ','.join([str(val) for val in energy]) + ',' + \
            ','.join([str(val) for val in correlation])
 
 def get_other_features_per_image(greyImage):
@@ -78,9 +105,12 @@ def get_other_features_from_file(input_file_path):
     return get_other_features_per_image(greyImage)
 
 def get_texture_features_from_file(input_file_path):
-    rgbImage = cv2.imread(input_file_path)
-    greyImage = cv2.cvtColor(rgbImage, cv2.COLOR_BGR2GRAY)
-    return get_texture_features_per_image(greyImage)
+    bgrImage = cv2.imread(input_file_path)
+    rgbImage = cv2.cvtColor(bgrImage, cv2.COLOR_BGR2RGB)
+    hsvImage = cv2.cvtColor(rgbImage, cv2.COLOR_RGB2HSV)
+    return get_texture_features_per_image(hsvImage[:][:][0]) + ',' + \
+           get_texture_features_per_image(hsvImage[:][:][1]) + ',' + \
+            get_texture_features_per_image(hsvImage[:][:][2])
 
 def get_mood_from_record(record):
     global label_list
@@ -111,11 +141,14 @@ def build_data_from_lists(file_list, file_path_list, mood_list, output_dir):
     texture_features_file = open(output_dir + 'texture_features.csv', 'w')
     mood_features_file = open(output_dir + 'mood_features.csv', 'w')
 
+    cnt = 0
     color_features_file.write("file,mean H,mean S,mean V,pleasure,arousal,dominance,c_H_1,c_H_2,c_H_3,c_S_1,c_S_2,c_S_3,c_V_1,c_V_2,c_V_3,Sum_H,Sum_S,Sum_V\n")
-    texture_features_file.write("file,contrast,contrast,contrast,contrast,dissimilarity,dissimilarity,dissimilarity,dissimilarity,homogeneity,homogeneity,homogeneity,homogeneity,ASM,ASM,ASM,ASM,correlation,correlation,correlation,correlation\n")
+    texture_features_file.write("file,contrast,contrast,contrast,contrast,dissimilarity,dissimilarity,dissimilarity,dissimilarity,homogeneity,homogeneity,homogeneity,homogeneity,energy,energy,energy,energy,correlation,correlation,correlation,correlation\n")
     mood_features_file.write("file,mood\n")
 
     for value in zip(file_list, file_path_list, mood_list):
+        cnt += 1
+        print(cnt)
         color_features_file.write(value[0] + ',' + get_color_features_from_file(value[1]) + '\n')
         texture_features_file.write(value[0] + ',' + get_texture_features_from_file(value[1]) + '\n')
         mood_features_file.write(value[0] + ',' + value[2] + '\n')
